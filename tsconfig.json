@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",                   // Compile to ES2020 for compatibility
+    "module": "ESNext",                   // Use ES modules
+    "moduleResolution": "node",           // Node-style module resolution
+    "declaration": true,                  // Generate .d.ts files
+    "declarationDir": "lib",              // Output declaration files to 'lib'
+    "outDir": "lib",                      // Output JavaScript files to 'lib'
+    "sourceMap": true,                    // Generate source maps
+    "strict": true,                       // Enable strict type checking
+    "esModuleInterop": true,              // For compatibility with CommonJS
+    "jsx": "react-native",                // React Native JSX setup
+    "skipLibCheck": true,                 // Skip library type checking for faster build
+    "resolveJsonModule": true,            // Enable importing JSON modules
+    "noEmitOnError": true                 // Don't emit output if there are errors
+  },
+  "include": ["src/**/*"],                // Include all files in the 'src' directory
+  "exclude": ["node_modules", "**/__tests__/*", "lib", "**/pods/**"]  // Exclude irrelevant folders
+}
