@@ -1,12 +1,10 @@
 import { initiate, onCustomerId, onResponse, type AmwalPayConfig } from './index';
 import NetworkClient from './network/NetworkClient';
-import { NativeEventEmitter, NativeModules, type EventSubscription } from 'react-native';
+import {  type EventSubscription } from 'react-native';
 
 
 class AmwalPaySDK {
   private static instance: AmwalPaySDK;
-  private eventEmitter: NativeEventEmitter;
-  private eventListeners: any[] = [];
 
   private onResponseSubscription: EventSubscription|null = null;
 
@@ -15,7 +13,6 @@ class AmwalPaySDK {
   private constructor() {
     // Initialize the event emitter
     
-    this.eventEmitter = new NativeEventEmitter(NativeModules.ReactAmwalPay);
   }
   
   static getInstance(): AmwalPaySDK {

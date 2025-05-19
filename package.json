@@ -1,6 +1,6 @@
 {
   "name": "react-amwal-pay",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "amwal pay",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
@@ -47,7 +47,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://.git"
+    "url": "git+https://https://github.com/amwal-pay/AnwalPaySDKReactNative.git"
   },
   "author": "amr saied <amr.elskaan@amwal-pay.com> (https://)",
   "license": "MIT",
@@ -163,5 +163,6 @@
     "version": "0.50.3"
   },
   "dependencies": {
+    "crypto-js": "^4.2.0"
   }
 }
