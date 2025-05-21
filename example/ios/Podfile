@@ -24,8 +24,25 @@ target 'ReactAmwalPayExample' do
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+  pod "amwalsdk", :path => "/Users/anaselmansory/studioprojects/amwal_pay_sdk/AnwalPaySDKNativeIOSExample/amwalsdk"
 
   post_install do |installer|
+    targets_to_skip_verification = [
+      'amwalsdk',
+      # add others as necessary...
+    ]
+
+    installer.pods_project.targets.each do |target|
+      if targets_to_skip_verification.include?(target.name)
+        target.build_configurations.each do |config|
+          puts "Updating OTHER_SWIFT_FLAGS for target #{target.name} to include -no-verify-emitted-module-interface"
+
+          # It's very important that the "$(inherited)" part is added, otherwise this will
+          # overwrite all other flags and cause a whole separate set of issues
+          config.build_settings['OTHER_SWIFT_FLAGS'] = '$(inherited) -no-verify-emitted-module-interface'
+        end
+      end
+    end
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
