@@ -12,9 +12,7 @@ npm install react-amwal-pay
 
 ```js
 import {
-  initiate,
-  onResponse,
-  onCustomerId,
+  AmwalPaySDK,
   Environment,
   Currency,
   TransactionType,
@@ -24,52 +22,71 @@ import {
 
 // Configure Amwal Pay
 const config: AmwalPayConfig = {
-  environment: Environment.SANDBOX, // or Environment.PRODUCTION
-  secureHash: 'your-secure-hash',
-  currency: Currency.KWD, // or other supported currencies
-  amount: '100.000',
-  merchantId: 'your-merchant-id',
-  terminalId: 'your-terminal-id',
+  environment: Environment.SIT, // or Environment.PRODUCTION
+  currency: Currency.OMR, // or other supported currencies
+  transactionType: TransactionType.CARD_WALLET,
   locale: 'en', // or 'ar'
-  customerId: 'customer-id',
-  transactionType: TransactionType.PURCHASE,
-  sessionToken: 'your-session-token'
+  merchantId: '84131',
+  terminalId: '811018',
+  amount: '1',
+  secureHash: '8570CEED656C8818E4A7CE04F22206358F272DAD5F0227D322B654675ABF8F83',
+  customerId: 'customer-id', // optional
+  sessionToken: 'your-session-token', // optional
+  onCustomerId(customerId) {
+    console.log('Customer ID:', customerId);
+  },
+  onResponse(response) {
+    console.log('Payment Response:', response);
+  }
 };
 
-// Initialize payment
-initiate(config);
+// Initialize and start payment
+const handlePayment = async () => {
+  try {
+    // Validate required fields
+    if (!isConfigValid(config)) {
+      console.error('Please fill in all required fields');
+      return;
+    }
 
-// Listen for payment response
-const responseSubscription = onResponse((response: AmwalPayResponse) => {
-  console.log('Payment Response:', response);
-  // Handle the payment response
-});
+    const amwalPay = AmwalPaySDK.getInstance();
+    await amwalPay.startPayment(config);
+  } catch (error) {
+    console.error('Error starting payment:', error);
+  }
+};
 
-// Listen for customer ID updates
-const customerIdSubscription = onCustomerId((customerId: string) => {
-  console.log('Customer ID:', customerId);
-  // Handle customer ID updates
-});
-
-// Don't forget to clean up subscriptions when component unmounts
-// responseSubscription.remove();
-// customerIdSubscription.remove();
+// Helper function to validate config
+const isConfigValid = (config: Partial<AmwalPayConfig>): boolean => {
+  return Boolean(
+    config.environment &&
+    config.secureHash &&
+    config.currency &&
+    config.amount &&
+    config.merchantId &&
+    config.terminalId &&
+    config.locale &&
+    config.transactionType
+  );
+};
 ```
 
 ## Configuration
 
 The `AmwalPayConfig` interface includes the following properties:
 
-- `environment`: The environment to use (SANDBOX or PRODUCTION)
-- `secureHash`: Your secure hash for authentication
-- `currency`: The currency for the transaction (e.g., KWD)
-- `amount`: The transaction amount
+- `environment`: The environment to use (SIT or PRODUCTION)
+- `currency`: The currency for the transaction (e.g., OMR)
+- `transactionType`: The type of transaction (e.g., CARD_WALLET)
+- `locale`: The language locale ('en' or 'ar')
 - `merchantId`: Your merchant ID
 - `terminalId`: Your terminal ID
-- `locale`: The language locale ('en' or 'ar')
-- `customerId`: The customer's ID
-- `transactionType`: The type of transaction (e.g., PURCHASE)
-- `sessionToken`: Your session token
+- `amount`: The transaction amount
+- `secureHash`: Your secure hash for authentication
+- `customerId`: (Optional) The customer's ID
+- `sessionToken`: (Optional) Your session token
+- `onCustomerId`: (Optional) Callback function for customer ID updates
+- `onResponse`: (Optional) Callback function for payment response
 
 ## Contributing
 
