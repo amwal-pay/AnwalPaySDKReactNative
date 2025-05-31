@@ -36,24 +36,39 @@ android/gradle/
 android/gradlew
 android/gradlew.bat
 android/local.properties
+android/.gradle/
+android/.idea/
+android/*.iml
+android/app/*.iml
 
 # iOS build files
 ios/build/
 ios/Pods/
-*.xcworkspace/
-*.xcodeproj/
-*.pbxuser
-*.mode1v3
-*.mode2v3
-*.perspectivev3
-*.xcuserstate
-project.xcworkspace/
-xcuserdata/
+ios/*.xcodeproj/
+ios/*.xcworkspace/
+ios/*.pbxuser
+ios/*.mode1v3
+ios/*.mode2v3
+ios/*.perspectivev3
+ios/*.xcuserstate
+ios/*.xcuserdata
+ios/*.xccheckout
+ios/*.moved-aside
+ios/*.xcscmblueprint
+ios/*.hmap
+ios/*.ipa
+ios/*.dSYM.zip
+ios/*.dSYM
 
 # Temporary files
 *.log
 *.tmp
 *.temp
+
+# Keep only necessary source files
+!android/src/
+!ios/ReactAmwalPay.h
+!ios/ReactAmwalPay.mm
 
 # Documentation
 docs/
