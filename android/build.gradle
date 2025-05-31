@@ -71,8 +71,6 @@ repositories {
 }
 rootProject.allprojects { Project subproject ->
     subproject.repositories {
-    maven { url  uri("E:/react_amwal_pay/android/repo") }
-
     maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
 }
@@ -81,7 +79,7 @@ def kotlin_version = getExtOrDefault("kotlinVersion")
 dependencies {
   implementation "com.facebook.react:react-android"
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-  implementation("com.amwal-pay:amwal_sdk:1.0.91"){
+  implementation("com.amwal-pay:amwal_sdk:+"){
     exclude group: 'com.android.support', module: 'support-v4'
     exclude group: 'com.android.support', module: 'design'
   }

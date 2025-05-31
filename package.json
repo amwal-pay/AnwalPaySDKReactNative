@@ -14,6 +14,8 @@
   },
   "files": [
     "src",
+    "android",
+    "ios",
     "lib",
     "cpp",
     "*.podspec",

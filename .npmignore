@@ -1,26 +1,59 @@
 # Exclude node_modules to avoid redundant dependencies
 node_modules/
 
-# Build artifacts
+# Build output
+lib/
+build/
+dist/
+
+# Development files
+example/
+__tests__/
+__fixtures__/
+__mocks__/
+*.test.*
+*.spec.*
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Debug files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android build files
+android/app/build/
 android/build/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+
+# iOS build files
 ios/build/
 ios/Pods/
-*.xcworkspace
-*.xcodeproj
-*.xcconfig
-.gradle/
-*.iml
-.DS_Store
-*.log
+*.xcworkspace/
+*.xcodeproj/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+project.xcworkspace/
+xcuserdata/
 
-# Tests and coverage
-__tests__/
-coverage/
-*.test.js
-*.spec.js
-*.test.ts
-*.spec.ts
-jest.config.js
+# Temporary files
+*.log
+*.tmp
+*.temp
 
 # Documentation
 docs/
@@ -36,18 +69,12 @@ CHANGELOG.md
 .prettierignore
 .stylelintrc
 .editorconfig
-.vscode/
-.idea/
+.gradle/
+*.iml
 
 # Version control
 .git/
 .gitignore
-
-# Miscellaneous
-*.swp
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # Metro bundler cache
 .expo/
