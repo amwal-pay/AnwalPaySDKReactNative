@@ -67,8 +67,7 @@ ios/*.dSYM
 
 # Keep only necessary source files
 !android/src/
-!ios/ReactAmwalPay.h
-!ios/ReactAmwalPay.mm
+!ios/
 
 # Documentation
 docs/
