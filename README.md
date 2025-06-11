@@ -18,7 +18,7 @@ After pod installation, you need to set "Build Libraries for Distribution" to NO
 4. In Build Settings, search for "Build Libraries for Distribution"
 5. Set it to NO
 
-![Build Libraries Setting](./docs/images/build-libraries-setting.png)
+![Build Libraries Setting](./docs/images/ios_install_note.png)
 
 ## Usage
 
