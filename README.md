@@ -8,6 +8,18 @@ A React Native library for integrating Amwal Pay payment gateway into your React
 npm install react-amwal-pay
 ```
 
+### iOS Installation Note
+
+After pod installation, you need to set "Build Libraries for Distribution" to NO in Xcode:
+
+1. Open your iOS project in Xcode
+2. Go to Pods project
+3. Select amwalsdk target
+4. In Build Settings, search for "Build Libraries for Distribution"
+5. Set it to NO
+
+![Build Libraries Setting](./docs/images/build-libraries-setting.png)
+
 ## Usage
 
 ```js
