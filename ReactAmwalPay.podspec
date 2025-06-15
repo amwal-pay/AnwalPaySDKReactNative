@@ -16,6 +16,8 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,swift}"
   s.private_header_files = "ios/**/*.h"
 
-  s.dependency "amwalsdk"
+  # Default to Release subspec
+  amwal_subspec = ENV['AMWAL_SUBSPEC'] || 'Debug'
+  s.dependency "amwalsdk/#{amwal_subspec}"
   install_modules_dependencies(s)
 end

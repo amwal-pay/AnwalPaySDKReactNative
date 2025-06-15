@@ -25,7 +25,6 @@ target 'ReactAmwalPayExample' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
  
-  # pod 'amwalsdk', :path => '/Users/anaselmansory/studioprojects/amwal_pay_sdk/AnwalPaySDKNativeIOSExample/amwalsdk'
   post_install do |installer|
 
     react_native_post_install(

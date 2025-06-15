@@ -20,6 +20,21 @@ After pod installation, you need to set "Build Libraries for Distribution" to NO
 
 ![Build Libraries Setting](./docs/images/ios_install_note.png)
 
+#### Configuring amwalsdk Subspec
+
+The library uses amwalsdk as a dependency and supports both Release and Debug subspecs. By default, it uses the Debug subspec. To change this, you can set the `AMWAL_SUBSPEC` environment variable in your Podfile:
+
+```ruby
+# In your Podfile
+ENV['AMWAL_SUBSPEC'] = 'Release' # or 'Debug'
+```
+
+Or you can set it when running pod install:
+
+```bash
+AMWAL_SUBSPEC=Release pod install
+```
+
 ## Usage
 
 ```js
