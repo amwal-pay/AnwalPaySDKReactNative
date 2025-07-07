@@ -43,6 +43,7 @@ import {
   Environment,
   Currency,
   TransactionType,
+  UuidUtil,
   type AmwalPayConfig,
   type AmwalPayResponse
 } from 'react-amwal-pay';
@@ -59,6 +60,7 @@ const config: AmwalPayConfig = {
   secureHash: '8570CEED656C8818E4A7CE04F22206358F272DAD5F0227D322B654675ABF8F83',
   customerId: 'customer-id', // optional
   sessionToken: 'your-session-token', // optional
+  transactionId: 'custom-transaction-id', // optional: auto-generated if not provided
   onCustomerId(customerId) {
     console.log('Customer ID:', customerId);
   },
@@ -98,6 +100,22 @@ const isConfigValid = (config: Partial<AmwalPayConfig>): boolean => {
 };
 ```
 
+## UUID Generation
+
+If you need to generate a custom transaction ID, you can use the built-in UUID utility:
+
+```js
+import { UuidUtil } from 'react-amwal-pay';
+
+// Generate a UUID for transaction ID
+const transactionId = UuidUtil.generateTransactionId();
+
+// Or use the lower-level generator
+const uuid = UuidUtil.generateV4();
+```
+
+The UUID utility generates lowercase UUIDs in v4 format, ensuring compatibility with the payment system.
+
 ## Configuration
 
 The `AmwalPayConfig` interface includes the following properties:
@@ -112,6 +130,7 @@ The `AmwalPayConfig` interface includes the following properties:
 - `secureHash`: Your secure hash for authentication
 - `customerId`: (Optional) The customer's ID
 - `sessionToken`: (Optional) Your session token
+- `transactionId`: (Optional) Unique transaction identifier - auto-generated if not provided
 - `onCustomerId`: (Optional) Callback function for customer ID updates
 - `onResponse`: (Optional) Callback function for payment response
 

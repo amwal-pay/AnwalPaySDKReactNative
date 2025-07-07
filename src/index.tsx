@@ -7,6 +7,7 @@ import ReactAmwalPay, {
   type AmwalPayNativeConfig,
 } from './NativeReactAmwalPay';
 import AmwalPaySDK from './AmwalPaySDK';
+import { UuidUtil } from './utils/UuidUtil';
 import type { EventSubscription } from 'react-native';
 
 // Create an event emitter for the native module
@@ -23,6 +24,7 @@ export function initiate(config: AmwalPayConfig): void {
     customerId: config.customerId,
     transactionType: config.transactionType,
     sessionToken: config.sessionToken,
+    transactionId: config.transactionId ?? UuidUtil.generateTransactionId(),
   };
 
   // Call the native module
@@ -43,4 +45,5 @@ export {
   type AmwalPayResponse,
   type AmwalPayConfig,
   AmwalPaySDK,
+  UuidUtil,
 };
