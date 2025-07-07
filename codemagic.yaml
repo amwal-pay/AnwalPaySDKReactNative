@@ -2,9 +2,15 @@ workflows:
   react-native:
     name: React Native Firebase Distribution
     max_build_duration: 60
+    integrations:
+      app_store_connect: Amwal CodeMagic
+      
     environment:
       groups:
         - firebase_credentials
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: reactamwalpay.example
       vars:
         NODE_VERSION: "18"
         GOOGLE_APPLICATION_CREDENTIALS: $FIREBASE_SERVICE_ACCOUNT
