@@ -20,6 +20,7 @@ workflows:
       node: "$NODE_VERSION"
       xcode: latest
       java: 17
+      cocoapods: default
     scripts:
       - name: Install dependencies
         script: |
@@ -30,6 +31,10 @@ workflows:
       #     cd example/android
       #     chmod +x gradlew
       #     ./gradlew assembleRelease
+      - name: Install Pods
+        script: |
+          cd example/ios
+          pod install
       - name: Build iOS 
         script: |
           cd example 
