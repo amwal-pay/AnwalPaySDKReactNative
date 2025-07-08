@@ -323,7 +323,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_STYLE = Manual;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = U7372H8TUQ;
 				PRODUCT_BUNDLE_IDENTIFIER = reactamwalpay.example;
