@@ -29,11 +29,11 @@ workflows:
         script: |
           cd example
           yarn install
-      # - name: Build Android APK
-      #   script: |
-      #     cd example/android
-      #     chmod +x gradlew
-      #     ./gradlew assembleRelease
+      - name: Build Android APK
+        script: |
+          cd example/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
       - name: Set up code signing settings on Xcode project
         script: |
           cd example/ios
