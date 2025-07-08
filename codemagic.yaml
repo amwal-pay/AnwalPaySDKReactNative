@@ -43,17 +43,6 @@ workflows:
         script: |
           cd example/ios 
           pod install
-          POD_PROJECT="example/ios/Pods/Pods.xcodeproj/project.pbxproj"
-          TARGET_NAME="amwalsdk"
-          echo "Patching $TARGET_NAME in $POD_PROJECT to disable BUILD_LIBRARIES_FOR_DISTRIBUTION"
-          sed -i '' "/isa = XCBuildConfiguration/,/}/ {
-            /name = Release;/ {
-              /amwalsdk/!b
-              /BUILD_LIBRARIES_FOR_DISTRIBUTION/ {
-                s/YES/NO/
-              }
-            }
-          }" "$POD_PROJECT"
           xcode-project build-ipa \
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME" \
