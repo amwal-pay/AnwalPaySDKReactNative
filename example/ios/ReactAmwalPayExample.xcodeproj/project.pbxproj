@@ -323,6 +323,9 @@
 					"-ObjC",
 					"-lc++",
 				);
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = U7372H8TUQ;
 				PRODUCT_BUNDLE_IDENTIFIER = reactamwalpay.example;
 				PRODUCT_NAME = ReactAmwalPayExample;
 				SWIFT_OBJC_BRIDGING_HEADER = "";
