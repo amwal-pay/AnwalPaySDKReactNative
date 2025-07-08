@@ -13,7 +13,7 @@ workflows:
         bundle_identifier: reactamwalpay.example
       vars:
         GRADLE_USER_HOME: ~/.gradle
-        NODE_VERSION: "18"
+        NODE_VERSION: "22.15.0"
         GOOGLE_APPLICATION_CREDENTIALS: $FIREBASE_SERVICE_ACCOUNT
         XCODE_WORKSPACE: "ReactAmwalPayExample.xcworkspace"
         XCODE_SCHEME: "ReactAmwalPayExample"
