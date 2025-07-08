@@ -78,7 +78,7 @@ workflows:
     max_build_duration: 30
     environment:
       vars:
-        NODE_VERSION: "18"
+        NODE_VERSION: "22.15.0"
       node: "$NODE_VERSION"
       java: 17
       groups:
