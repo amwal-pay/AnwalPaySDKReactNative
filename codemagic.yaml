@@ -33,17 +33,12 @@ workflows:
       - name: Build iOS 
         script: |
           cd example
-          xcodebuild -workspace ios/$XCODE_WORKSPACE \
-                    -scheme $XCODE_SCHEME \
-                    -sdk iphoneos \
-                    -configuration Release \
-                    -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
-                    archive
-
-          xcodebuild -exportArchive \
-                    -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
-                    -exportOptionsPlist ios/exportOptions.plist \
-                    -exportPath $HOME/build/ios_build
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME" \
+            --export-options-plist=$XCODE_SCHEME/export_options.plist \
+            --verbose \
+            --clean
     artifacts:
       - example/android/app/build/outputs/**/*.apk
       - build/ios_build/*.ipa
