@@ -42,7 +42,7 @@ workflows:
 
           xcodebuild -exportArchive \
                     -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
-                    -exportOptionsPlist ios/$XCODE_SCHEME/exportOptions.plist \
+                    -exportOptionsPlist ios/$XCODE_SCHEME/export_options.plist \
                     -exportPath $HOME/build/ios_build
     artifacts:
       - example/android/app/build/outputs/**/*.apk
