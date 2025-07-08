@@ -306,7 +306,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = U7372H8TUQ;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
@@ -323,9 +326,6 @@
 					"-ObjC",
 					"-lc++",
 				);
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = "";
-				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = U7372H8TUQ;
 				PRODUCT_BUNDLE_IDENTIFIER = reactamwalpay.example;
 				PRODUCT_NAME = ReactAmwalPayExample;
 				SWIFT_OBJC_BRIDGING_HEADER = "";

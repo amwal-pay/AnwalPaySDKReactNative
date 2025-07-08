@@ -33,15 +33,14 @@ target 'ReactAmwalPayExample' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
-  end
+
+  # Set "Build Libraries for Distribution" to NO for amwalsdk
   installer.pods_project.targets.each do |target|
     if target.name == 'amwalsdk'
       target.build_configurations.each do |config|
-        if config.name == 'Release'
-          config.build_settings['VERIFY_EMITTED_MODULE_INTERFACE'] = 'NO'
-          config.build_settings['SWIFT_EMIT_MODULE_INTERFACE'] = 'NO'
-          end
-        end
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
       end
     end
+  end
+end
 end
