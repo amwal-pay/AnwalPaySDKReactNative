@@ -32,13 +32,18 @@ workflows:
       #     ./gradlew assembleRelease
       - name: Build iOS 
         script: |
-          cd example
-          xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME" \
-            --export-options-plist=$XCODE_SCHEME/export_options.plist \
-            --verbose \
-            --clean
+          cd example 
+          xcodebuild -workspace ios/$XCODE_WORKSPACE \
+                    -scheme $XCODE_SCHEME \
+                    -sdk iphoneos \
+                    -configuration Release \
+                    -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
+                    clean archive
+
+          xcodebuild -exportArchive \
+                    -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
+                    -exportOptionsPlist ios/$XCODE_SCHEME/exportOptions.plist \
+                    -exportPath $HOME/build/ios_build
     artifacts:
       - example/android/app/build/outputs/**/*.apk
       - build/ios_build/*.ipa
