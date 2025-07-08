@@ -26,8 +26,8 @@ workflows:
           yarn install --frozen-lockfile
       - name: Build Android APK
         script: |
-          cd example
-          yarn android
+          cd example/android
+          ./gradlew assembleRelease
       - name: Build iOS 
         script: |
           cd example
