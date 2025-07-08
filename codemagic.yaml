@@ -9,8 +9,10 @@ workflows:
       groups:
         - firebase_credentials
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: reactamwalpay.example
+        provisioning_profiles:
+          - reactnative
+        certificates:
+          - Code Magic Apple Dis
       vars:
         GRADLE_USER_HOME: ~/.gradle
         NODE_VERSION: "22.15.0"
@@ -21,37 +23,36 @@ workflows:
       xcode: latest
       java: 17
       cocoapods: default
+    
     scripts:
       - name: Install dependencies
         script: |
           cd example
-          yarn install --frozen-lockfile
+          yarn install && yarn global add react-native
       # - name: Build Android APK
       #   script: |
       #     cd example/android
       #     chmod +x gradlew
       #     ./gradlew assembleRelease
-      - name: Install Pods
+      - name: Set up code signing settings on Xcode project
         script: |
           cd example/ios
-          pod install
+          xcode-project use-profiles 
+
       - name: Build iOS 
         script: |
-          cd example 
-          xcodebuild -workspace ios/$XCODE_WORKSPACE \
-                    -scheme $XCODE_SCHEME \
-                    -sdk iphoneos \
-                    -configuration Release \
-                    -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
-                    clean archive
-
-          xcodebuild -exportArchive \
-                    -archivePath $HOME/build/$XCODE_SCHEME.xcarchive \
-                    -exportOptionsPlist ios/$XCODE_SCHEME/export_options.plist \
-                    -exportPath $HOME/build/ios_build
+          cd example/ios 
+          pod install
+          xcode-project build-ipa \
+              --workspace "$XCODE_WORKSPACE" \
+              --scheme "$XCODE_SCHEME" \
+              --archive-flags="-destination 'generic/platform=iOS'"
     artifacts:
       - example/android/app/build/outputs/**/*.apk
-      - build/ios_build/*.ipa
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
     publishing:
       firebase:
         firebase_service_account: $FIREBASE_SERVICE_ACCOUNT
