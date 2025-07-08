@@ -27,6 +27,7 @@ workflows:
       - name: Build Android APK
         script: |
           cd example/android
+          chmod +x gradlew
           ./gradlew assembleRelease
       - name: Build iOS 
         script: |
