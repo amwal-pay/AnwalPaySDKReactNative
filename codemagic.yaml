@@ -28,7 +28,7 @@ workflows:
       - name: Install dependencies
         script: |
           cd example
-          yarn install && yarn dlx react-native
+          yarn install
       # - name: Build Android APK
       #   script: |
       #     cd example/android
