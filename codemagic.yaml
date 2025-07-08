@@ -49,7 +49,7 @@ workflows:
               --archive-flags="-destination 'generic/platform=iOS' BUILD_LIBRARIES_FOR_DISTRIBUTION=NO"
     artifacts:
       - example/android/app/build/outputs/**/*.apk
-      - build/ios/ipa/*.ipa
+      - $HOME/build/outputs/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
