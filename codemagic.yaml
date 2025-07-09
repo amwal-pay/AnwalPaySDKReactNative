@@ -29,11 +29,15 @@ workflows:
         script: |
           cd example
           yarn install
-      - name: Build Android APK
+      # - name: Build Android APK
+      #   script: |
+      #     cd example/android
+      #     chmod +x gradlew
+      #     ./gradlew assembleRelease
+      - name: Increment iOS build number
         script: |
-          cd example/android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          cd example/ios
+          agvtool new-version -all $(($BUILD_NUMBER + 1))
       - name: Set up code signing settings on Xcode project
         script: |
           cd example/ios
