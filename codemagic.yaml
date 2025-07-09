@@ -73,10 +73,7 @@ workflows:
         beta_groups:
           - Testers
         submit_to_app_store: false
-        export_compliance:
-          uses_encryption: false          # Set to true if you use any encryption APIs
-          encryption_updated: false       # true only if you’ve added or removed encryption since last submission
-          non_exempt_encryption: false    # true if you need a CCATS (most libs can be “false”)
+
   package-publish:
     name: Build and Publish Package
     max_build_duration: 30
