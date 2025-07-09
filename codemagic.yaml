@@ -53,7 +53,7 @@ workflows:
           find . -name "*.ipa"
     artifacts:
       - example/android/app/build/outputs/**/*.apk
-      - example/build/ios/ipa/*.ipa
+      - example/ios/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
