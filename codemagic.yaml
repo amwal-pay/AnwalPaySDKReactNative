@@ -29,11 +29,11 @@ workflows:
         script: |
           cd example
           yarn install
-      # - name: Build Android APK
-      #   script: |
-      #     cd example/android
-      #     chmod +x gradlew
-      #     ./gradlew assembleRelease
+      - name: Build Android APK
+        script: |
+          cd example/android
+          chmod +x gradlew
+          ./gradlew assembleRelease
       - name: Set up code signing settings on Xcode project
         script: |
           cd example/ios
@@ -47,10 +47,6 @@ workflows:
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME" \
               --archive-flags="-destination 'generic/platform=iOS' BUILD_LIBRARIES_FOR_DISTRIBUTION=NO"
-      - name: Debug IPA location
-        script: |
-          echo "Looking for IPA files..."
-          find . -name "*.ipa"
     artifacts:
       - example/android/app/build/outputs/**/*.apk
       - example/ios/build/ios/ipa/*.ipa
