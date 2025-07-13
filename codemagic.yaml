@@ -95,9 +95,26 @@ workflows:
       - name: Build package
         script: |
           yarn prepare
-      - name: Bump version
+      - name: Bump version from latest published
         script: |
-          npm version patch --no-git-tag-version
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          CURRENT_VERSION=$(npm view "$PACKAGE_NAME" version 2>/dev/null || echo "0.0.0")
+
+          echo "📦 Latest published version: $CURRENT_VERSION"
+
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+          PATCH=$((PATCH + 1))
+          NEXT_VERSION="$MAJOR.$MINOR.$PATCH"
+
+          echo "🔢 Next version: $NEXT_VERSION"
+
+          node -e "
+            const fs = require('fs');
+            const path = './package.json';
+            const pkg = JSON.parse(fs.readFileSync(path));
+            pkg.version = '$NEXT_VERSION';
+            fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+          "
       - name: Set up npm authentication
         script: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
