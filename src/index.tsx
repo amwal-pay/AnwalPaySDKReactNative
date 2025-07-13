@@ -13,6 +13,16 @@ import type { EventSubscription } from 'react-native';
 // Create an event emitter for the native module
 
 export function initiate(config: AmwalPayConfig): void {
+  // Create default additionValues with merchantIdentifier for iOS if not provided
+  const defaultAdditionValues = {
+    merchantIdentifier: 'merchant.applepay.amwalpay',
+  };
+  
+  const finalAdditionValues = {
+    ...defaultAdditionValues,
+    ...config.additionValues,
+  };
+
   const nativeConfig: AmwalPayNativeConfig = {
     environment: config.environment,
     secureHash: config.secureHash,
@@ -25,6 +35,7 @@ export function initiate(config: AmwalPayConfig): void {
     transactionType: config.transactionType,
     sessionToken: config.sessionToken,
     transactionId: config.transactionId ?? UuidUtil.generateTransactionId(),
+    additionValues: finalAdditionValues,
   };
 
   // Call the native module

@@ -61,6 +61,10 @@ const config: AmwalPayConfig = {
   customerId: 'customer-id', // optional
   sessionToken: 'your-session-token', // optional
   transactionId: 'custom-transaction-id', // optional: auto-generated if not provided
+  additionValues: { // optional: custom key-value pairs for SDK configuration
+    merchantIdentifier: 'merchant.applepay.amwalpay', // for Apple Pay configuration
+    customKey: 'customValue' // add more as needed
+  },
   onCustomerId(customerId) {
     console.log('Customer ID:', customerId);
   },
@@ -116,6 +120,36 @@ const uuid = UuidUtil.generateV4();
 
 The UUID utility generates lowercase UUIDs in v4 format, ensuring compatibility with the payment system.
 
+## Addition Values Configuration
+
+The SDK supports `additionValues` parameter for passing custom key-value pairs that can be used for various SDK functionalities.
+
+### Default Addition Values
+
+The SDK automatically provides default values:
+- `merchantIdentifier`: "merchant.applepay.amwalpay" (used for Apple Pay configuration)
+
+### Usage
+
+```js
+// Using default additionValues (automatically applied)
+const config = {
+  // ... other configuration
+  // additionValues will automatically include merchantIdentifier
+};
+
+// Using custom additionValues
+const customConfig = {
+  // ... other configuration
+  additionValues: {
+    merchantIdentifier: 'merchant.custom.identifier',
+    customKey: 'customValue'
+  }
+};
+```
+
+Custom `additionValues` will be merged with defaults, with custom values taking precedence.
+
 ## Configuration
 
 The `AmwalPayConfig` interface includes the following properties:
@@ -131,6 +165,7 @@ The `AmwalPayConfig` interface includes the following properties:
 - `customerId`: (Optional) The customer's ID
 - `sessionToken`: (Optional) Your session token
 - `transactionId`: (Optional) Unique transaction identifier - auto-generated if not provided
+- `additionValues`: (Optional) Custom key-value pairs for SDK configuration (includes merchantIdentifier for Apple Pay)
 - `onCustomerId`: (Optional) Callback function for customer ID updates
 - `onResponse`: (Optional) Callback function for payment response
 

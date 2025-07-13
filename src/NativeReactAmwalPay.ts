@@ -37,6 +37,7 @@ export interface AmwalPayConfig {
   transactionType: TransactionType;
   sessionToken?: string;
   transactionId?: string;
+  additionValues?: { [key: string]: string };
   onResponse: (response: AmwalPayResponse) => void;
   onCustomerId: (customerId: string) => void;
 }
@@ -54,6 +55,7 @@ export interface AmwalPayNativeConfig {
   transactionType: string;
   sessionToken?: string;
   transactionId?: string;
+  additionValues?: { [key: string]: string };
 }
 
 export interface Spec extends TurboModule {
