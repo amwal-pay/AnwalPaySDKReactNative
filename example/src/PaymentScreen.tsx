@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   SafeAreaView,
+  Modal,
+  Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import {
@@ -17,6 +19,54 @@ import {
   TransactionType,
   type AmwalPayConfig,
 } from 'react-amwal-pay';
+
+interface ModalPickerProps {
+  visible: boolean;
+  selectedValue: string | undefined;
+  onValueChange: (value: string) => void;
+  onClose: () => void;
+  items: Array<{ label: string; value: string }>;
+  title: string;
+}
+
+const ModalPicker: React.FC<ModalPickerProps> = ({
+  visible,
+  selectedValue,
+  onValueChange,
+  onClose,
+  items,
+  title,
+}) => {
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
+              <Text style={styles.modalCloseButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <Picker
+            selectedValue={selectedValue}
+            onValueChange={onValueChange}
+            style={styles.modalPicker}
+            itemStyle={Platform.OS === 'ios' ? styles.modalPickerItem : undefined}
+          >
+            {items.map((item) => (
+              <Picker.Item key={item.value} label={item.label} value={item.value} />
+            ))}
+          </Picker>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export const PaymentScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState<string|null>(null);
@@ -38,6 +88,9 @@ export const PaymentScreen: React.FC = () => {
       console.log('Payment Response:', response);
     },
   });
+  const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [showTransactionTypePicker, setShowTransactionTypePicker] = useState(false);
 
   const handleInitializePayment = async () => {
     try {
@@ -75,18 +128,29 @@ export const PaymentScreen: React.FC = () => {
       </View>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text style={styles.label}>Environment</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={config.environment}
-            onValueChange={(value) =>
-              setConfig({ ...config, environment: value as Environment })
-            }
-          >
-            {Object.values(Environment).map((env) => (
-              <Picker.Item key={env} label={env} value={env} />
-            ))}
-          </Picker>
-        </View>
+        <TouchableOpacity
+          style={styles.pickerButton}
+          onPress={() => setShowEnvironmentPicker(true)}
+        >
+          <Text style={styles.pickerButtonText}>
+            {config.environment || 'Select Environment'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ModalPicker
+          visible={showEnvironmentPicker}
+          selectedValue={config.environment}
+          onValueChange={(value) => {
+            setConfig({ ...config, environment: value as Environment });
+            setShowEnvironmentPicker(false);
+          }}
+          onClose={() => setShowEnvironmentPicker(false)}
+          items={Object.values(Environment).map((env) => ({
+            label: env,
+            value: env,
+          }))}
+          title="Select Environment"
+        />
 
         <Text style={styles.label}>Secure Hash</Text>
         <TextInput
@@ -97,18 +161,29 @@ export const PaymentScreen: React.FC = () => {
         />
 
         <Text style={styles.label}>Currency</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={config.currency}
-            onValueChange={(value) =>
-              setConfig({ ...config, currency: value as Currency })
-            }
-          >
-            {Object.values(Currency).map((curr) => (
-              <Picker.Item key={curr} label={curr} value={curr} />
-            ))}
-          </Picker>
-        </View>
+        <TouchableOpacity
+          style={styles.pickerButton}
+          onPress={() => setShowCurrencyPicker(true)}
+        >
+          <Text style={styles.pickerButtonText}>
+            {config.currency || 'Select Currency'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ModalPicker
+          visible={showCurrencyPicker}
+          selectedValue={config.currency}
+          onValueChange={(value) => {
+            setConfig({ ...config, currency: value as Currency });
+            setShowCurrencyPicker(false);
+          }}
+          onClose={() => setShowCurrencyPicker(false)}
+          items={Object.values(Currency).map((curr) => ({
+            label: curr,
+            value: curr,
+          }))}
+          title="Select Currency"
+        />
         <Text style={styles.label}>Amount</Text>
         <TextInput
           style={styles.input}
@@ -135,21 +210,32 @@ export const PaymentScreen: React.FC = () => {
         />
 
         <Text style={styles.label}>Transaction Type</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={config.transactionType}
-            onValueChange={(value) =>
-              setConfig({
-                ...config,
-                transactionType: value as TransactionType,
-              })
-            }
-          >
-            {Object.values(TransactionType).map((type) => (
-              <Picker.Item key={type} label={type} value={type} />
-            ))}
-          </Picker>
-        </View>
+        <TouchableOpacity
+          style={styles.pickerButton}
+          onPress={() => setShowTransactionTypePicker(true)}
+        >
+          <Text style={styles.pickerButtonText}>
+            {config.transactionType || 'Select Transaction Type'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ModalPicker
+          visible={showTransactionTypePicker}
+          selectedValue={config.transactionType}
+          onValueChange={(value) => {
+            setConfig({
+              ...config,
+              transactionType: value as TransactionType,
+            });
+            setShowTransactionTypePicker(false);
+          }}
+          onClose={() => setShowTransactionTypePicker(false)}
+          items={Object.values(TransactionType).map((type) => ({
+            label: type,
+            value: type,
+          }))}
+          title="Select Transaction Type"
+        />
 
         <TouchableOpacity
           style={styles.button}
@@ -231,8 +317,69 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     overflow: 'hidden',
-    width: '100%', // Adjust width as needed
-    maxWidth: 300, // Optional: Limit max width
+    width: '100%',
+    maxWidth: 300,
+  },
+  pickerButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  pickerButtonArrow: {
+    fontSize: 12,
+    color: '#999',
+    marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    maxHeight: '50%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalCloseButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  modalPicker: {
+    height: Platform.OS === 'ios' ? 200 : 150,
+  },
+  modalPickerItem: {
+    fontSize: 16,
   },
 });
 
