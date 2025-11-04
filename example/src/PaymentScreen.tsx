@@ -37,6 +37,9 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
   items,
   title,
 }) => {
+  console.log('ModalPicker rendered with items:', items);
+  console.log('Items length:', items.length);
+  
   return (
     <Modal
       visible={visible}
@@ -52,16 +55,31 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
               <Text style={styles.modalCloseButtonText}>Done</Text>
             </TouchableOpacity>
           </View>
-          <Picker
-            selectedValue={selectedValue}
-            onValueChange={onValueChange}
-            style={styles.modalPicker}
-            itemStyle={Platform.OS === 'ios' ? styles.modalPickerItem : undefined}
-          >
+          <ScrollView style={styles.modalList}>
             {items.map((item) => (
-              <Picker.Item key={item.value} label={item.label} value={item.value} />
+              <TouchableOpacity
+                key={item.value}
+                style={[
+                  styles.modalListItem,
+                  selectedValue === item.value && styles.modalListItemSelected
+                ]}
+                onPress={() => {
+                  onValueChange(item.value);
+                  onClose();
+                }}
+              >
+                <Text style={[
+                  styles.modalListItemText,
+                  selectedValue === item.value && styles.modalListItemTextSelected
+                ]}>
+                  {item.label}
+                </Text>
+                {selectedValue === item.value && (
+                  <Text style={styles.modalListItemCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
             ))}
-          </Picker>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -73,15 +91,22 @@ export const PaymentScreen: React.FC = () => {
   
   // Debug enum values
   React.useEffect(() => {
-    console.log('Environment enum values:', Object.values(Environment));
-    console.log('Currency enum values:', Object.values(Currency));
-    console.log('TransactionType enum values:', Object.values(TransactionType));
+    console.log('Environment enum:', Environment);
+    console.log('Environment.SIT:', Environment.SIT);
+    console.log('Environment.UAT:', Environment.UAT);
+    console.log('Environment.PROD:', Environment.PROD);
+    console.log('Currency enum:', Currency);
+    console.log('Currency.OMR:', Currency.OMR);
+    console.log('TransactionType enum:', TransactionType);
+    console.log('TransactionType.NFC:', TransactionType.NFC);
+    console.log('TransactionType.CARD_WALLET:', TransactionType.CARD_WALLET);
+    console.log('TransactionType.APPLE_PAY:', TransactionType.APPLE_PAY);
   }, []);
   
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
-    environment: Environment.SIT,
-    currency: Currency.OMR,
-    transactionType: TransactionType.CARD_WALLET,
+    environment: 'SIT' as Environment,
+    currency: 'OMR' as Currency,
+    transactionType: 'CARD_WALLET' as TransactionType,
     locale: 'en',
     merchantId: '84131',
     terminalId: '811018',
@@ -154,9 +179,9 @@ export const PaymentScreen: React.FC = () => {
           }}
           onClose={() => setShowEnvironmentPicker(false)}
           items={[
-            { label: Environment.SIT, value: Environment.SIT },
-            { label: Environment.UAT, value: Environment.UAT },
-            { label: Environment.PROD, value: Environment.PROD },
+            { label: 'SIT', value: 'SIT' },
+            { label: 'UAT', value: 'UAT' },
+            { label: 'PROD', value: 'PROD' },
           ]}
           title="Select Environment"
         />
@@ -188,7 +213,7 @@ export const PaymentScreen: React.FC = () => {
           }}
           onClose={() => setShowCurrencyPicker(false)}
           items={[
-            { label: Currency.OMR, value: Currency.OMR },
+            { label: 'OMR', value: 'OMR' },
           ]}
           title="Select Currency"
         />
@@ -239,9 +264,9 @@ export const PaymentScreen: React.FC = () => {
           }}
           onClose={() => setShowTransactionTypePicker(false)}
           items={[
-            { label: TransactionType.NFC, value: TransactionType.NFC },
-            { label: TransactionType.CARD_WALLET, value: TransactionType.CARD_WALLET },
-            { label: TransactionType.APPLE_PAY, value: TransactionType.APPLE_PAY },
+            { label: 'NFC', value: 'NFC' },
+            { label: 'CARD_WALLET', value: 'CARD_WALLET' },
+            { label: 'APPLE_PAY', value: 'APPLE_PAY' },
           ]}
           title="Select Transaction Type"
         />
@@ -389,6 +414,34 @@ const styles = StyleSheet.create({
   },
   modalPickerItem: {
     fontSize: 16,
+  },
+  modalList: {
+    maxHeight: 300,
+  },
+  modalListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalListItemSelected: {
+    backgroundColor: '#f0f8ff',
+  },
+  modalListItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  modalListItemTextSelected: {
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  modalListItemCheck: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: 'bold',
   },
 });
 
