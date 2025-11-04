@@ -70,6 +70,14 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
 
 export const PaymentScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState<string|null>(null);
+  
+  // Debug enum values
+  React.useEffect(() => {
+    console.log('Environment enum values:', Object.values(Environment));
+    console.log('Currency enum values:', Object.values(Currency));
+    console.log('TransactionType enum values:', Object.values(TransactionType));
+  }, []);
+  
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
     environment: Environment.SIT,
     currency: Currency.OMR,
@@ -145,10 +153,11 @@ export const PaymentScreen: React.FC = () => {
             setShowEnvironmentPicker(false);
           }}
           onClose={() => setShowEnvironmentPicker(false)}
-          items={Object.values(Environment).map((env) => ({
-            label: env,
-            value: env,
-          }))}
+          items={[
+            { label: Environment.SIT, value: Environment.SIT },
+            { label: Environment.UAT, value: Environment.UAT },
+            { label: Environment.PROD, value: Environment.PROD },
+          ]}
           title="Select Environment"
         />
 
@@ -178,10 +187,9 @@ export const PaymentScreen: React.FC = () => {
             setShowCurrencyPicker(false);
           }}
           onClose={() => setShowCurrencyPicker(false)}
-          items={Object.values(Currency).map((curr) => ({
-            label: curr,
-            value: curr,
-          }))}
+          items={[
+            { label: Currency.OMR, value: Currency.OMR },
+          ]}
           title="Select Currency"
         />
         <Text style={styles.label}>Amount</Text>
@@ -230,10 +238,11 @@ export const PaymentScreen: React.FC = () => {
             setShowTransactionTypePicker(false);
           }}
           onClose={() => setShowTransactionTypePicker(false)}
-          items={Object.values(TransactionType).map((type) => ({
-            label: type,
-            value: type,
-          }))}
+          items={[
+            { label: TransactionType.NFC, value: TransactionType.NFC },
+            { label: TransactionType.CARD_WALLET, value: TransactionType.CARD_WALLET },
+            { label: TransactionType.APPLE_PAY, value: TransactionType.APPLE_PAY },
+          ]}
           title="Select Transaction Type"
         />
 
