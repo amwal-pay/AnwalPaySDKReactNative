@@ -43,6 +43,22 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
     
     Log.d(NAME, "initiate got here")
     try {
+      // Handle additionValues map
+      val additionValues = if (config.hasKey("additionValues")) {
+        val additionValuesMap = config.getMap("additionValues")
+        val map = mutableMapOf<String, String>()
+        additionValuesMap?.let { readableMap ->
+          for (key in readableMap.keySetIterator()) {
+            readableMap.getString(key)?.let { value ->
+              map[key] = value
+            }
+          }
+        }
+        map.toMap()
+      } else {
+        AmwalSDK.Config.generateDefaultAdditionValues()
+      }
+
       val sdkConfig = AmwalSDK.Config(
         environment = AmwalSDK.Config.Environment.valueOf(config.getString("environment") ?: ""),
         sessionToken = config.getString("sessionToken") ?: "",
@@ -52,7 +68,10 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
         terminalId = config.getString("terminalId") ?: "",
         locale = java.util.Locale(config.getString("locale") ?: "en"),
         customerId = if (config.hasKey("customerId")) config.getString("customerId") else null,
-        transactionType = AmwalSDK.Config.TransactionType.valueOf(config.getString("transactionType") ?: "")
+        transactionType = AmwalSDK.Config.TransactionType.valueOf(config.getString("transactionType") ?: ""),
+        transactionId = if (config.hasKey("transactionId")) config.getString("transactionId") else AmwalSDK.Config.generateTransactionId(),
+        additionValues = additionValues,
+        merchantReference = if (config.hasKey("merchantReference")) config.getString("merchantReference") else null
       )
       
       // Ensure this runs on the UI thread

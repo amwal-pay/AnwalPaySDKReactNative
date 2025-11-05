@@ -113,6 +113,7 @@ export const PaymentScreen: React.FC = () => {
     amount: '1',
     secureHash:
       '8570CEED656C8818E4A7CE04F22206358F272DAD5F0227D322B654675ABF8F83',
+    merchantReference: '1234',
      onCustomerId(customerId) {
       setCustomerId(customerId);
       console.log('Customer ID:', customerId);
@@ -240,6 +241,14 @@ export const PaymentScreen: React.FC = () => {
           value={config.terminalId}
           onChangeText={(value) => setConfig({ ...config, terminalId: value })}
           placeholder="Enter terminal ID"
+        />
+
+        <Text style={styles.label}>Merchant Reference (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          value={config.merchantReference}
+          onChangeText={(value) => setConfig({ ...config, merchantReference: value })}
+          placeholder="Enter merchant reference"
         />
 
         <Text style={styles.label}>Transaction Type</Text>

@@ -42,6 +42,15 @@ class ReactAmwalPay: RCTEventEmitter {
     private var onResponseCallback: RCTResponseSenderBlock?
     private var onCustomerIdCallback: RCTResponseSenderBlock?
     private func prepareConfig(config: [String: Any]) -> Config {
+        // Handle additionValues
+        var additionValues: [String: String] = Config.generateDefaultAdditionValues()
+        if let configAdditionValues = config["additionValues"] as? [String: String] {
+            // Merge with default values, allowing override
+            for (key, value) in configAdditionValues {
+                additionValues[key] = value
+            }
+        }
+        
         return Config(
             environment: mapEnvironment(environment: config["environment"] as? String ?? "PROD"),
             sessionToken: config["sessionToken"] as? String ?? "",
@@ -51,7 +60,10 @@ class ReactAmwalPay: RCTEventEmitter {
             terminalId: config["terminalId"] as? String ?? "",
             customerId: config["customerId"] as? String,
             locale: mapLocale(locale: config["locale"] as? String ?? "en"),
-            transactionType: mapTransactionType(transactionType: config["transactionType"] as? String ?? "CARD_WALLET")
+            transactionType: mapTransactionType(transactionType: config["transactionType"] as? String ?? "CARD_WALLET"),
+            transactionId: config["transactionId"] as? String ?? Config.generateTransactionId(),
+            additionValues: additionValues,
+            merchantReference: config["merchantReference"] as? String
         )
     }
     

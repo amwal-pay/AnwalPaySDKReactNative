@@ -61,6 +61,7 @@ const config: AmwalPayConfig = {
   customerId: 'customer-id', // optional
   sessionToken: 'your-session-token', // optional
   transactionId: 'custom-transaction-id', // optional: auto-generated if not provided
+  merchantReference: 'optional-merchant-reference', // optional: merchant reference for transaction tracking
   additionValues: { // optional: custom key-value pairs for SDK configuration
     merchantIdentifier: 'merchant.applepay.amwalpay', // for Apple Pay configuration
     customKey: 'customValue' // add more as needed
