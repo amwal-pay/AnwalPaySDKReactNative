@@ -48,7 +48,9 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
         val additionValuesMap = config.getMap("additionValues")
         val map = mutableMapOf<String, String>()
         additionValuesMap?.let { readableMap ->
-          for (key in readableMap.keySetIterator()) {
+          val iterator = readableMap.keySetIterator()
+          while (iterator.hasNextKey()) {
+            val key = iterator.nextKey()
             readableMap.getString(key)?.let { value ->
               map[key] = value
             }
