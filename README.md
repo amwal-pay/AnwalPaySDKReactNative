@@ -4,11 +4,78 @@ A React Native library for integrating Amwal Pay payment gateway into your React
 
 ## Installation
 
+### Prerequisites
+
+- React Native project (0.79+)
+- Node.js 18 or higher
+- iOS: Xcode and CocoaPods installed
+- Android: Android Studio and JDK installed
+
+### Step 1: Install the Package
+
 ```sh
 npm install react-amwal-pay
+# or
+yarn add react-amwal-pay
 ```
 
-### iOS Installation Note
+### Step 2: Configure React Native (Required)
+
+Create or update `react-native.config.js` in your project root:
+
+```javascript
+const path = require('path');
+const pkg = require('react-amwal-pay/package.json');
+
+module.exports = {
+  project: {
+    ios: {
+      automaticPodsInstallation: true,
+    },
+  },
+  dependencies: {
+    [pkg.name]: {
+      root: path.join(__dirname, 'node_modules/react-amwal-pay'),
+      platforms: {
+        ios: {},
+        android: {},
+      },
+    },
+  },
+};
+```
+
+### Step 3: iOS Setup
+
+#### 3.1 Update Podfile
+
+Add the following configuration to your `ios/Podfile` inside the `post_install` block:
+
+```ruby
+post_install do |installer|
+  react_native_post_install(installer, config[:reactNativePath])
+  
+  # Set "Build Libraries for Distribution" to NO for amwalsdk
+  installer.pods_project.targets.each do |target|
+    if target.name == 'amwalsdk'
+      target.build_configurations.each do |config|
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
+      end
+    end
+  end
+end
+```
+
+#### 3.2 Install Pods
+
+```bash
+cd ios
+pod install
+cd ..
+```
+
+#### 3.3 iOS Build Setting (Manual Step)
 
 After pod installation, you need to set "Build Libraries for Distribution" to NO in Xcode:
 
@@ -20,7 +87,7 @@ After pod installation, you need to set "Build Libraries for Distribution" to NO
 
 ![Build Libraries Setting](https://github.com/amwal-pay/AnwalPaySDKReactNative/raw/master/docs/images/ios_install_note.png)
 
-#### Configuring amwalsdk Subspec
+#### 3.4 Configuring amwalsdk Subspec (Optional)
 
 The library uses amwalsdk as a dependency and supports both Release and Debug subspecs. By default, it uses the Debug subspec. To change this, you can set the `AMWAL_SUBSPEC` environment variable in your Podfile:
 
@@ -34,6 +101,45 @@ Or you can set it when running pod install:
 ```bash
 AMWAL_SUBSPEC=Release pod install
 ```
+
+### Step 4: Android Setup
+
+No additional Android configuration is required. The SDK uses React Native's autolinking feature.
+
+**Note:** The SDK requires minimum SDK 24 (Android 7.0). Ensure your `android/build.gradle` has:
+
+```gradle
+minSdkVersion = 24
+```
+
+### Step 5: Clean and Rebuild
+
+After installation, clean and rebuild your project:
+
+```bash
+# iOS
+cd ios
+rm -rf Pods Podfile.lock
+pod install
+cd ..
+
+# Android
+cd android
+./gradlew clean
+cd ..
+
+# Rebuild your app
+npm run ios
+# or
+npm run android
+```
+
+### Troubleshooting
+
+- **Pods fail to install**: Clean pods and reinstall (`rm -rf Pods Podfile.lock && pod install`)
+- **Linking issues**: Ensure `react-native.config.js` is in your project root
+- **Build errors**: Clean build folders and rebuild your project
+- **iOS build errors**: Verify that "Build Libraries for Distribution" is set to NO for amwalsdk target
 
 ## Usage
 
@@ -166,6 +272,7 @@ The `AmwalPayConfig` interface includes the following properties:
 - `customerId`: (Optional) The customer's ID
 - `sessionToken`: (Optional) Your session token
 - `transactionId`: (Optional) Unique transaction identifier - auto-generated if not provided
+- `merchantReference`: (Optional) Merchant reference for transaction tracking
 - `additionValues`: (Optional) Custom key-value pairs for SDK configuration (includes merchantIdentifier for Apple Pay)
 - `onCustomerId`: (Optional) Callback function for customer ID updates
 - `onResponse`: (Optional) Callback function for payment response
