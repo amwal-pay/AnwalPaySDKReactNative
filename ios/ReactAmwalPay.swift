@@ -5,7 +5,33 @@ import React
 @objc(ReactAmwalPay)
 class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
-    
+
+    override func supportedEvents() -> [String]! {
+        return ["onResponse", "onCustomerId"]
+    }
+
+    override func startObserving() {
+        hasListeners = true
+    }
+
+    override func stopObserving() {
+        hasListeners = false
+    }
+
+    private func sendEvent(_ eventName: String, body: Any?) {
+        if hasListeners {
+            sendEvent(withName: eventName, body: body)
+        }
+    }
+
+    private func emitOnResponse(_ params: [String: Any]) {
+        sendEvent("onResponse", body: params)
+    }
+
+    private func emitOnCustomerId(_ customerId: String?) {
+        sendEvent("onCustomerId", body: customerId)
+    }
+
     private func mapEnvironment(environment: String) -> Config.Environment {
         switch environment {
         case "PROD": return .PROD
@@ -39,8 +65,6 @@ class ReactAmwalPay: RCTEventEmitter {
         }
     }
     
-    private var onResponseCallback: RCTResponseSenderBlock?
-    private var onCustomerIdCallback: RCTResponseSenderBlock?
     private func prepareConfig(config: [String: Any]) -> Config {
         // Handle additionValues
         var additionValues: [String: String] = Config.generateDefaultAdditionValues()
@@ -68,55 +92,65 @@ class ReactAmwalPay: RCTEventEmitter {
     }
     
     @objc
-    func initiate(_ config: [String: Any],
-                 resolver resolve: @escaping RCTPromiseResolveBlock,
-                 rejecter reject: @escaping RCTPromiseRejectBlock) {
+    func initiate(_ config: [String: Any]) {
       DispatchQueue.main.async {
            do {
                let sdkConfig = self.prepareConfig(config: config)
                let sdk = AmwalSDK()
-               
+
                guard let rootVC = UIApplication.shared.keyWindow?.rootViewController else {
-                   reject("NO_ROOT_VC", "No root view controller found", nil)
+                   let errorData: [String: Any] = [
+                       "data": [
+                           "status": "ERROR",
+                           "message": "No root view controller found"
+                       ]
+                   ]
+                   self.emitOnResponse(errorData)
                    return
                }
-               
+
                let sdkVC = try sdk.createViewController(
                    config: sdkConfig,
                    onResponse: { [weak self] response in
-                                         self?.onResponseCallback?([[
-                                             "status": response != nil ? "success" : "error",
-                                             "message": response != nil ? "Transaction completed" : "Transaction failed",
-                                             "data": response ?? ""
-                                         ]])
-                                     },
+                       let responseData: [String: Any] = [
+                           "data": [
+                               "status": response != nil ? "success" : "error",
+                               "message": response != nil ? "Transaction completed" : "Transaction failed",
+                               "data": response ?? ""
+                           ]
+                       ]
+                       self?.emitOnResponse(responseData)
+                   },
                    onCustomerId: { [weak self] customerId in
-                     self?.onCustomerIdCallback?([customerId])
-                                       }
+                       self?.emitOnCustomerId(customerId)
+                   }
                )
-               
+
                // Present modally (critical missing piece)
                rootVC.present(sdkVC, animated: true)
-               
-               resolve(true)
            } catch {
                print("Presentation failed: \(error.localizedDescription)")
-               reject("PRESENTATION_ERROR", error.localizedDescription, error)
+               let errorData: [String: Any] = [
+                   "data": [
+                       "status": "ERROR",
+                       "message": error.localizedDescription
+                   ]
+               ]
+               self.emitOnResponse(errorData)
            }
        }
     }
     
-  @objc
-  func onResponse(_ callback: @escaping RCTResponseSenderBlock) {
-      onResponseCallback = callback
-  }
-  
-  @objc
-  func onCustomerId(_ callback: @escaping RCTResponseSenderBlock) {
-      onCustomerIdCallback = callback
-  }
-  
-    
+    @objc
+    func addListener(_ eventName: String) {
+        // Required for RN built in Event Emitter Calls.
+    }
+
+    @objc
+    func removeListeners(_ count: Double) {
+        // Required for RN built in Event Emitter Calls.
+    }
+
     override static func requiresMainQueueSetup() -> Bool {
         return true
     }

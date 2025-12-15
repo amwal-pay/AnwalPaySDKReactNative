@@ -3,12 +3,10 @@
 
 @interface RCT_EXTERN_MODULE(ReactAmwalPay, RCTEventEmitter)
 
-RCT_EXTERN_METHOD(initiate:(NSDictionary *)config
-                  resolver:(RCTPromiseResolveBlock)resolve
-                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(initiate:(NSDictionary *)config)
 
-RCT_EXTERN_METHOD(onResponse:(RCTResponseSenderBlock)callback)
+RCT_EXTERN_METHOD(addListener:(NSString *)eventName)
 
-RCT_EXTERN_METHOD(onCustomerId:(RCTResponseSenderBlock)callback)
+RCT_EXTERN_METHOD(removeListeners:(double)count)
 
 @end
