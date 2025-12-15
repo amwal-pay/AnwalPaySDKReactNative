@@ -13,9 +13,9 @@ export enum Currency {
 }
 
 export enum TransactionType {
-  NFC= 'NFC' ,
-  CARD_WALLET= 'CARD_WALLET',
-  APPLE_PAY= 'APPLE_PAY'
+  NFC = 'NFC',
+  CARD_WALLET = 'CARD_WALLET',
+  APPLE_PAY = 'APPLE_PAY'
 }
 
 export interface AmwalPayResponse {
@@ -63,8 +63,8 @@ export interface AmwalPayNativeConfig {
 export interface Spec extends TurboModule {
   // Change the parameter type to AmwalPayNativeConfig
   initiate(config: AmwalPayNativeConfig): void;
-  onResponse: EventEmitter<AmwalPayResponse>,
-  onCustomerId: EventEmitter<string>,
+  addListener(eventName: string): void;
+  removeListeners(count: number): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('ReactAmwalPay');

@@ -17,27 +17,38 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
     return NAME
   }
 
- 
-  
-  private fun sendEvent(eventName: String, params: WritableMap?) {
+  private fun sendEvent(eventName: String, params: Any?) {
     reactApplicationContext
       .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
       .emit(eventName, params)
+  }
+
+  private fun emitOnResponse(params: WritableMap) {
+    sendEvent("onResponse", params)
+  }
+
+  private fun emitOnCustomerId(customerId: String?) {
+    sendEvent("onCustomerId", customerId)
+  }
+
+  override fun addListener(eventName: String?) {
+    // Required for RN built in Event Emitter Calls.
+  }
+
+  override fun removeListeners(count: Double) {
+    // Required for RN built in Event Emitter Calls.
   }
   
   override fun initiate(config: ReadableMap) {
     Log.d(NAME, "initiate called")
     val activity = reactApplicationContext.currentActivity
     if (activity == null) {
-      // Since we can't use Promise here (method signature must match the spec),
-      // we'll send an error event
       val params = Arguments.createMap()
-      params.putString("type", "onResponse")
       val errorData = Arguments.createMap()
       errorData.putString("status", "ERROR")
       errorData.putString("message", "Activity context is not available")
       params.putMap("data", errorData)
-      sendEvent("AmwalPayEvent", params)
+      emitOnResponse(params)
       return
     }
     
@@ -102,12 +113,11 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
     } catch (e: Exception) {
       Log.e(NAME, "Error initializing AmwalSDK", e)
       val params = Arguments.createMap()
-      params.putString("type", "onResponse")
       val errorData = Arguments.createMap()
       errorData.putString("status", "ERROR")
       errorData.putString("message", e.message ?: "Unknown error")
       params.putMap("data", errorData)
-      sendEvent("AmwalPayEvent", params)
+      emitOnResponse(params)
     }
   }
 
