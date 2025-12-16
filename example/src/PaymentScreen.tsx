@@ -88,7 +88,7 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
 
 export const PaymentScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState<string|null>(null);
-  
+
   // Debug enum values
   React.useEffect(() => {
     console.log('Environment enum:', Environment);
@@ -114,14 +114,19 @@ export const PaymentScreen: React.FC = () => {
     secureHash:
       '8570CEED656C8818E4A7CE04F22206358F272DAD5F0227D322B654675ABF8F83',
     merchantReference: '1234',
-     onCustomerId(customerId) {
-      setCustomerId(customerId);
-      console.log('Customer ID:', customerId);
-    },
-    onResponse(response) {
-      console.log('Payment Response:', response);
-    },
   });
+
+  // Define callbacks separately to avoid stale closure issues
+  const handleCustomerId = React.useCallback((customerId: string) => {
+    setCustomerId(customerId);
+    console.log('Customer ID received:', customerId);
+  }, []);
+
+  const handleResponse = React.useCallback((response: any) => {
+    // Handle both Android (wrapped in "data") and iOS (direct) response formats
+    const actualResponse = response?.data ? response.data : response;
+    console.log('Payment Response received:', actualResponse);
+  }, []);
   const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showTransactionTypePicker, setShowTransactionTypePicker] = useState(false);
@@ -132,9 +137,14 @@ export const PaymentScreen: React.FC = () => {
         Alert.alert('Error', 'Please fill in all required fields');
         return;
       }
-      config.customerId = customerId;
+      const paymentConfig = {
+        ...config,
+        customerId,
+        onCustomerId: handleCustomerId,
+        onResponse: handleResponse,
+      };
       const amwalPay = AmwalPaySDK.getInstance();
-      await amwalPay.startPayment(config as AmwalPayConfig);
+      await amwalPay.startPayment(paymentConfig as AmwalPayConfig);
     } catch (e) {
       Alert.alert('Error', 'Error starting payment');
       console.log(e);

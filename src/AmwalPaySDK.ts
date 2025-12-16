@@ -77,15 +77,31 @@ class AmwalPaySDK {
     // Remove any existing listeners
     this.removeEventListeners();
 
+    console.log('🟢 Setting up event listeners...');
+    console.log('🟢 onResponse callback exists?', typeof config.onResponse === 'function');
+    console.log('🟢 onCustomerId callback exists?', typeof config.onCustomerId === 'function');
+
     this.onResponseSubscription = onResponse((response) => {
+      console.log('🟢 SDK onResponse listener triggered with:', response);
       console.log('Received AmwalPayResponse:', response);
-      config.onResponse(response);
+      if (config.onResponse) {
+        config.onResponse(response);
+      } else {
+        console.error('❌ config.onResponse is not a function!');
+      }
     });
 
     this.onCustomerIdSubscription = onCustomerId((customerId) => {
+      console.log('🟢 SDK onCustomerId listener triggered with:', customerId);
       console.log('Received customerId:', customerId);
-      config.onCustomerId(customerId);
+      if (config.onCustomerId) {
+        config.onCustomerId(customerId);
+      } else {
+        console.error('❌ config.onCustomerId is not a function!');
+      }
     });
+
+    console.log('🟢 Event listeners set up complete');
   }
 
   /**

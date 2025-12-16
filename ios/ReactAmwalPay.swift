@@ -11,25 +11,35 @@ class ReactAmwalPay: RCTEventEmitter {
     }
 
     override func startObserving() {
+        print("🔴 startObserving called - setting hasListeners = true")
         hasListeners = true
     }
 
     override func stopObserving() {
+        print("🔴 stopObserving called - setting hasListeners = false")
         hasListeners = false
     }
 
-    private func sendEvent(_ eventName: String, body: Any?) {
+    private func emitOnResponse(_ params: [String: Any]) {
+        print("🔴 emitOnResponse called with params: \(params)")
+        print("🔴 hasListeners: \(hasListeners)")
         if hasListeners {
-            sendEvent(withName: eventName, body: body)
+            print("🔴 Sending onResponse event to JS")
+            sendEvent(withName: "onResponse", body: params)
+        } else {
+            print("🔴 NOT sending - no listeners!")
         }
     }
 
-    private func emitOnResponse(_ params: [String: Any]) {
-        sendEvent("onResponse", body: params)
-    }
-
     private func emitOnCustomerId(_ customerId: String?) {
-        sendEvent("onCustomerId", body: customerId)
+        print("🔴 emitOnCustomerId called with: \(customerId ?? "nil")")
+        print("🔴 hasListeners: \(hasListeners)")
+        if hasListeners {
+            print("🔴 Sending onCustomerId event to JS")
+            sendEvent(withName: "onCustomerId", body: customerId)
+        } else {
+            print("🔴 NOT sending - no listeners!")
+        }
     }
 
     private func mapEnvironment(environment: String) -> Config.Environment {
@@ -74,7 +84,7 @@ class ReactAmwalPay: RCTEventEmitter {
                 additionValues[key] = value
             }
         }
-        
+
         return Config(
             environment: mapEnvironment(environment: config["environment"] as? String ?? "PROD"),
             sessionToken: config["sessionToken"] as? String ?? "",
@@ -112,19 +122,37 @@ class ReactAmwalPay: RCTEventEmitter {
                let sdkVC = try sdk.createViewController(
                    config: sdkConfig,
                    onResponse: { [weak self] response in
-                       let responseData: [String: Any] = [
-                           "data": [
-                               "status": response != nil ? "success" : "error",
-                               "message": response != nil ? "Transaction completed" : "Transaction failed",
-                               "data": response ?? ""
+                       print("🟠 SDK onResponse callback fired!")
+                       print("🟠 Response type: \(type(of: response))")
+                       print("🟠 Response value: \(response ?? "nil")")
+
+                       // The SDK returns a JSON string, we need to parse it
+                       if let responseString = response as? String,
+                          let data = responseString.data(using: .utf8),
+                          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                           print("🟠 Successfully parsed JSON string to dictionary")
+                           self?.emitOnResponse(json)
+                       } else if let responseDict = response as? [String: Any] {
+                           print("🟠 Response is already a dictionary")
+                           self?.emitOnResponse(responseDict)
+                       } else {
+                           print("🟠 Could not parse response, sending as-is")
+                           let errorData: [String: Any] = [
+                               "status": "error",
+                               "message": "Invalid response format",
+                               "rawResponse": String(describing: response)
                            ]
-                       ]
-                       self?.emitOnResponse(responseData)
+                           self?.emitOnResponse(errorData)
+                       }
                    },
                    onCustomerId: { [weak self] customerId in
+                       print("🟠 SDK onCustomerId callback fired with: \(customerId ?? "nil")")
                        self?.emitOnCustomerId(customerId)
                    }
                )
+
+               print("🟠 SDK ViewController created successfully")
+               print("🟠 About to present SDK ViewController...")
 
                // Present modally (critical missing piece)
                rootVC.present(sdkVC, animated: true)
@@ -142,13 +170,19 @@ class ReactAmwalPay: RCTEventEmitter {
     }
     
     @objc
-    func addListener(_ eventName: String) {
-        // Required for RN built in Event Emitter Calls.
+    override func addListener(_ eventName: String) {
+        super.addListener(eventName)
+        print("🔴 addListener called for: \(eventName)")
+        if !hasListeners {
+            hasListeners = true
+            print("🔴 Set hasListeners = true")
+        }
     }
 
     @objc
-    func removeListeners(_ count: Double) {
-        // Required for RN built in Event Emitter Calls.
+    override func removeListeners(_ count: Double) {
+        super.removeListeners(count)
+        print("🔴 removeListeners called with count: \(count)")
     }
 
     override static func requiresMainQueueSetup() -> Bool {
