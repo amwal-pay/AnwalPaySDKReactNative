@@ -11,7 +11,6 @@ import {
   Modal,
   Platform,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import {
   AmwalPaySDK,
   Environment,
