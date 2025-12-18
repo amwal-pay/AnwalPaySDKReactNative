@@ -1,21 +1,92 @@
 import Foundation
 import amwalsdk
 import React
+import UIKit
+
+// MARK: - Fix UIViewController presentation for share sheets
+public extension UIViewController {
+    static let swizzlePresentOnce: Void = {
+        let originalSelector = #selector(UIViewController.present(_:animated:completion:))
+        let swizzledSelector = #selector(UIViewController.swizzled_present(_:animated:completion:))
+        
+        guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
+              let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
+            return
+        }
+        
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+    
+    @objc dynamic func swizzled_present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        // Check if this view controller's view is in the window hierarchy
+        if self.view.window == nil {
+            print("⚠️ Attempting to present on VC not in hierarchy, finding correct presenter...")
+            // Find the correct view controller to present from
+            if let topVC = UIViewController.getTopMostViewController() {
+                topVC.swizzled_present(viewControllerToPresent, animated: flag, completion: completion)
+                return
+            }
+        }
+        
+        // Check if we're already presenting something
+        if self.presentedViewController != nil {
+            print("⚠️ Already presenting, dismissing first...")
+            self.dismiss(animated: false) { [weak self] in
+                self?.swizzled_present(viewControllerToPresent, animated: flag, completion: completion)
+            }
+            return
+        }
+        
+        // Call original implementation
+        self.swizzled_present(viewControllerToPresent, animated: flag, completion: completion)
+    }
+    
+    static func getTopMostViewController() -> UIViewController? {
+        var topController: UIViewController?
+        
+        if #available(iOS 13.0, *) {
+            let keyWindow = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }
+            topController = keyWindow?.rootViewController
+        } else {
+            topController = UIApplication.shared.keyWindow?.rootViewController
+        }
+        
+        while let presented = topController?.presentedViewController {
+            topController = presented
+        }
+        
+        return topController
+    }
+}
 
 @objc(ReactAmwalPay)
-class ReactAmwalPay: RCTEventEmitter {
+open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
+    
+    // Initialize swizzling when the class is first loaded
+    private static let initializeSwizzling: Void = {
+        _ = UIViewController.swizzlePresentOnce
+    }()
+    
+    // Initialize swizzling when the module is loaded
+    public override init() {
+        super.init()
+        _ = ReactAmwalPay.initializeSwizzling
+    }
 
-    override func supportedEvents() -> [String]! {
+    open override func supportedEvents() -> [String]! {
         return ["onResponse", "onCustomerId"]
     }
 
-    override func startObserving() {
+    open override func startObserving() {
         print("🔴 startObserving called - setting hasListeners = true")
         hasListeners = true
     }
 
-    override func stopObserving() {
+    open override func stopObserving() {
         print("🔴 stopObserving called - setting hasListeners = false")
         hasListeners = false
     }
@@ -102,7 +173,7 @@ class ReactAmwalPay: RCTEventEmitter {
     }
     
     @objc
-    func initiate(_ config: [String: Any]) {
+    open func initiate(_ config: [String: Any]) {
       DispatchQueue.main.async {
            do {
                let sdkConfig = self.prepareConfig(config: config)
@@ -170,7 +241,7 @@ class ReactAmwalPay: RCTEventEmitter {
     }
     
     @objc
-    override func addListener(_ eventName: String) {
+    open override func addListener(_ eventName: String) {
         super.addListener(eventName)
         print("🔴 addListener called for: \(eventName)")
         if !hasListeners {
@@ -180,12 +251,12 @@ class ReactAmwalPay: RCTEventEmitter {
     }
 
     @objc
-    override func removeListeners(_ count: Double) {
+    open override func removeListeners(_ count: Double) {
         super.removeListeners(count)
         print("🔴 removeListeners called with count: \(count)")
     }
 
-    override static func requiresMainQueueSetup() -> Bool {
+    open override static func requiresMainQueueSetup() -> Bool {
         return true
     }
 }
