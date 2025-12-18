@@ -256,7 +256,8 @@ open class ReactAmwalPay: RCTEventEmitter {
         print("🔴 removeListeners called with count: \(count)")
     }
 
-    open override static func requiresMainQueueSetup() -> Bool {
+    @objc
+    public override static func requiresMainQueueSetup() -> Bool {
         return true
     }
 }
