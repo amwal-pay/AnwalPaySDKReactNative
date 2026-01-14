@@ -170,7 +170,10 @@ const config: AmwalPayConfig = {
   merchantReference: 'optional-merchant-reference', // optional: merchant reference for transaction tracking
   additionValues: { // optional: custom key-value pairs for SDK configuration
     merchantIdentifier: 'merchant.applepay.amwalpay', // for Apple Pay configuration
-    customKey: 'customValue' // add more as needed
+    useBottomSheetDesign: 'true', // use bottom sheet design (v2)
+    primaryColor: '#FF5733', // custom primary color
+    secondaryColor: '#33FF57', // custom secondary color
+    ignoreReceipt: 'false' // show receipt after transaction
   },
   onCustomerId(customerId) {
     console.log('Customer ID:', customerId);
@@ -236,7 +239,32 @@ The SDK supports `additionValues` parameter for passing custom key-value pairs t
 The SDK automatically provides default values:
 - `merchantIdentifier`: "merchant.applepay.amwalpay" (used for Apple Pay configuration)
 
-### Usage
+### Available Configuration Options
+
+You can customize the SDK behavior using the following `additionValues` keys:
+
+#### UI Customization
+- **`useBottomSheetDesign`**: `'true'` | `'false'` (default: `'false'`)
+  - Controls the payment screen design
+  - `'true'`: Uses the newer bottom sheet design (v2)
+  - `'false'`: Uses the original full-screen design
+
+- **`primaryColor`**: Hex color string (e.g., `'#FF5733'`)
+  - Sets the primary theme color for the SDK UI
+
+- **`secondaryColor`**: Hex color string (e.g., `'#33FF57'`)
+  - Sets the secondary theme color for the SDK UI
+
+#### Payment Flow
+- **`ignoreReceipt`**: `'true'` | `'false'` (default: `'false'`)
+  - Controls whether to show the receipt screen after transaction
+  - `'true'`: Skips the receipt display
+  - `'false'`: Shows the receipt screen
+
+- **`merchantIdentifier`**: String (default: `'merchant.applepay.amwalpay'`)
+  - Apple Pay merchant identifier for iOS
+
+### Usage Examples
 
 ```js
 // Using default additionValues (automatically applied)
@@ -245,17 +273,30 @@ const config = {
   // additionValues will automatically include merchantIdentifier
 };
 
-// Using custom additionValues
+// Using custom additionValues with UI customization
 const customConfig = {
   // ... other configuration
   additionValues: {
-    merchantIdentifier: 'merchant.custom.identifier',
-    customKey: 'customValue'
+    useBottomSheetDesign: 'true',
+    primaryColor: '#FF5733',
+    secondaryColor: '#33FF57',
+    ignoreReceipt: 'false',
+    merchantIdentifier: 'merchant.custom.identifier'
+  }
+};
+
+// Minimal configuration with bottom sheet design
+const minimalConfig = {
+  // ... other configuration
+  additionValues: {
+    useBottomSheetDesign: 'true'
   }
 };
 ```
 
 Custom `additionValues` will be merged with defaults, with custom values taking precedence.
+
+**Note:** All boolean values should be passed as strings (`'true'` or `'false'`).
 
 ## Configuration
 

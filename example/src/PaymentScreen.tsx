@@ -113,6 +113,12 @@ export const PaymentScreen: React.FC = () => {
     secureHash:
       '8570CEED656C8818E4A7CE04F22206358F272DAD5F0227D322B654675ABF8F83',
     merchantReference: '1234',
+    additionValues: {
+      useBottomSheetDesign: 'false',
+      ignoreReceipt: 'false',
+      primaryColor: '#1E88E5',
+      secondaryColor: '#FFC107',
+    },
   });
 
   // Define callbacks separately to avoid stale closure issues
@@ -129,6 +135,8 @@ export const PaymentScreen: React.FC = () => {
   const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [showTransactionTypePicker, setShowTransactionTypePicker] = useState(false);
+  const [showBottomSheetPicker, setShowBottomSheetPicker] = useState(false);
+  const [showIgnoreReceiptPicker, setShowIgnoreReceiptPicker] = useState(false);
 
   const handleInitializePayment = async () => {
     try {
@@ -289,6 +297,98 @@ export const PaymentScreen: React.FC = () => {
           title="Select Transaction Type"
         />
 
+        <Text style={styles.label}>Primary Color</Text>
+        <TextInput
+          style={styles.input}
+          value={config.additionValues?.primaryColor}
+          onChangeText={(value) =>
+            setConfig({
+              ...config,
+              additionValues: {
+                ...config.additionValues,
+                primaryColor: value,
+              },
+            })
+          }
+          placeholder="Enter hex color (e.g., #1E88E5)"
+        />
+
+        <Text style={styles.label}>Secondary Color</Text>
+        <TextInput
+          style={styles.input}
+          value={config.additionValues?.secondaryColor}
+          onChangeText={(value) =>
+            setConfig({
+              ...config,
+              additionValues: {
+                ...config.additionValues,
+                secondaryColor: value,
+              },
+            })
+          }
+          placeholder="Enter hex color (e.g., #FFC107)"
+        />
+
+        <Text style={styles.label}>Ignore Receipt Screen</Text>
+        <TouchableOpacity
+          style={styles.pickerButton}
+          onPress={() => setShowIgnoreReceiptPicker(true)}
+        >
+          <Text style={styles.pickerButtonText}>
+            {config.additionValues?.ignoreReceipt === 'true' ? 'Yes' : 'No'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ModalPicker
+          visible={showIgnoreReceiptPicker}
+          selectedValue={config.additionValues?.ignoreReceipt}
+          onValueChange={(value) => {
+            setConfig({
+              ...config,
+              additionValues: {
+                ...config.additionValues,
+                ignoreReceipt: value,
+              },
+            });
+            setShowIgnoreReceiptPicker(false);
+          }}
+          onClose={() => setShowIgnoreReceiptPicker(false)}
+          items={[
+            { label: 'No ', value: 'false' },
+            { label: 'Yes', value: 'true' },
+          ]}
+          title="Ignore Receipt Screen"
+        />
+ <Text style={styles.label}>Use Bottom Sheet Design</Text>
+        <TouchableOpacity
+          style={styles.pickerButton}
+          onPress={() => setShowBottomSheetPicker(true)}
+        >
+          <Text style={styles.pickerButtonText}>
+            {config.additionValues?.useBottomSheetDesign === 'true' ? 'Yes' : 'No'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ModalPicker
+          visible={showBottomSheetPicker}
+          selectedValue={config.additionValues?.useBottomSheetDesign}
+          onValueChange={(value) => {
+            setConfig({
+              ...config,
+              additionValues: {
+                ...config.additionValues,
+                useBottomSheetDesign: value,
+              },
+            });
+            setShowBottomSheetPicker(false);
+          }}
+          onClose={() => setShowBottomSheetPicker(false)}
+          items={[
+            { label: 'No', value: 'false' },
+            { label: 'Yes', value: 'true' },
+          ]}
+          title="Use Bottom Sheet Design"
+        />
         <TouchableOpacity
           style={styles.button}
           onPress={handleInitializePayment}
@@ -460,6 +560,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#007AFF',
     fontWeight: 'bold',
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
   },
 });
 
