@@ -38,7 +38,7 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
 }) => {
   console.log('ModalPicker rendered with items:', items);
   console.log('Items length:', items.length);
-  
+
   return (
     <Modal
       visible={visible}
@@ -60,17 +60,20 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
                 key={item.value}
                 style={[
                   styles.modalListItem,
-                  selectedValue === item.value && styles.modalListItemSelected
+                  selectedValue === item.value && styles.modalListItemSelected,
                 ]}
                 onPress={() => {
                   onValueChange(item.value);
                   onClose();
                 }}
               >
-                <Text style={[
-                  styles.modalListItemText,
-                  selectedValue === item.value && styles.modalListItemTextSelected
-                ]}>
+                <Text
+                  style={[
+                    styles.modalListItemText,
+                    selectedValue === item.value &&
+                      styles.modalListItemTextSelected,
+                  ]}
+                >
                   {item.label}
                 </Text>
                 {selectedValue === item.value && (
@@ -86,7 +89,7 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
 };
 
 export const PaymentScreen: React.FC = () => {
-  const [customerId, setCustomerId] = useState<string|null>(null);
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   // Debug enum values
   React.useEffect(() => {
@@ -101,7 +104,7 @@ export const PaymentScreen: React.FC = () => {
     console.log('TransactionType.CARD_WALLET:', TransactionType.CARD_WALLET);
     console.log('TransactionType.APPLE_PAY:', TransactionType.APPLE_PAY);
   }, []);
-  
+
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
     environment: 'SIT' as Environment,
     currency: 'OMR' as Currency,
@@ -134,7 +137,8 @@ export const PaymentScreen: React.FC = () => {
   }, []);
   const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
-  const [showTransactionTypePicker, setShowTransactionTypePicker] = useState(false);
+  const [showTransactionTypePicker, setShowTransactionTypePicker] =
+    useState(false);
   const [showBottomSheetPicker, setShowBottomSheetPicker] = useState(false);
   const [showIgnoreReceiptPicker, setShowIgnoreReceiptPicker] = useState(false);
 
@@ -230,9 +234,7 @@ export const PaymentScreen: React.FC = () => {
             setShowCurrencyPicker(false);
           }}
           onClose={() => setShowCurrencyPicker(false)}
-          items={[
-            { label: 'OMR', value: 'OMR' },
-          ]}
+          items={[{ label: 'OMR', value: 'OMR' }]}
           title="Select Currency"
         />
         <Text style={styles.label}>Amount</Text>
@@ -264,7 +266,9 @@ export const PaymentScreen: React.FC = () => {
         <TextInput
           style={styles.input}
           value={config.merchantReference}
-          onChangeText={(value) => setConfig({ ...config, merchantReference: value })}
+          onChangeText={(value) =>
+            setConfig({ ...config, merchantReference: value })
+          }
           placeholder="Enter merchant reference"
         />
 
@@ -359,13 +363,15 @@ export const PaymentScreen: React.FC = () => {
           ]}
           title="Ignore Receipt Screen"
         />
- <Text style={styles.label}>Use Bottom Sheet Design</Text>
+        <Text style={styles.label}>Use Bottom Sheet Design</Text>
         <TouchableOpacity
           style={styles.pickerButton}
           onPress={() => setShowBottomSheetPicker(true)}
         >
           <Text style={styles.pickerButtonText}>
-            {config.additionValues?.useBottomSheetDesign === 'true' ? 'Yes' : 'No'}
+            {config.additionValues?.useBottomSheetDesign === 'true'
+              ? 'Yes'
+              : 'No'}
           </Text>
           <Text style={styles.pickerButtonArrow}>▼</Text>
         </TouchableOpacity>

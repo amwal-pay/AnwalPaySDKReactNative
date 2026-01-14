@@ -4,7 +4,7 @@ import { TurboModuleRegistry } from 'react-native';
 export enum Environment {
   SIT = 'SIT',
   UAT = 'UAT',
-  PROD = 'PROD'
+  PROD = 'PROD',
 }
 
 export enum Currency {
@@ -14,7 +14,7 @@ export enum Currency {
 export enum TransactionType {
   NFC = 'NFC',
   CARD_WALLET = 'CARD_WALLET',
-  APPLE_PAY = 'APPLE_PAY'
+  APPLE_PAY = 'APPLE_PAY',
 }
 
 export interface AmwalPayResponse {
@@ -25,7 +25,7 @@ export interface AmwalPayResponse {
 
 /**
  * Configuration interface for Amwal Pay SDK
- * 
+ *
  * @interface AmwalPayConfig
  * @description Complete configuration for initializing and starting a payment session
  */
@@ -54,14 +54,14 @@ export interface AmwalPayConfig {
   transactionId?: string;
   /**
    * Optional additional configuration values
-   * 
+   *
    * Supported keys:
    * - `useBottomSheetDesign`: 'true' | 'false' - Use bottom sheet design (v2) instead of full screen
    * - `ignoreReceipt`: 'true' | 'false' - Skip receipt display after transaction
    * - `primaryColor`: Hex color string (e.g., '#FF5733') - Primary theme color
    * - `secondaryColor`: Hex color string (e.g., '#33FF57') - Secondary theme color
    * - `merchantIdentifier`: String - Apple Pay merchant identifier (default: 'merchant.applepay.amwalpay')
-   * 
+   *
    * @example
    * ```typescript
    * additionValues: {
