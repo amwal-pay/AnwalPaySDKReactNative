@@ -28,6 +28,261 @@ interface ModalPickerProps {
   title: string;
 }
 
+interface ColorPickerProps {
+  visible: boolean;
+  selectedColor: string | undefined;
+  onColorChange: (color: string) => void;
+  onClose: () => void;
+  title: string;
+}
+
+const COLOR_SWATCHES = [
+  // Blues
+  '#1E88E5', '#2196F3', '#03A9F4', '#00BCD4', '#0D47A1', '#1565C0',
+  // Greens
+  '#4CAF50', '#8BC34A', '#CDDC39', '#009688', '#2E7D32', '#43A047',
+  // Reds & Pinks
+  '#F44336', '#E91E63', '#FF5722', '#C62828', '#D32F2F', '#E53935',
+  // Oranges & Yellows
+  '#FF9800', '#FFC107', '#FFEB3B', '#FF5722', '#EF6C00', '#F57C00',
+  // Purples
+  '#9C27B0', '#673AB7', '#3F51B5', '#7B1FA2', '#8E24AA', '#AB47BC',
+  // Grays & Neutrals
+  '#9E9E9E', '#607D8B', '#455A64', '#37474F', '#212121', '#000000',
+];
+
+const ColorPicker: React.FC<ColorPickerProps> = ({
+  visible,
+  selectedColor,
+  onColorChange,
+  onClose,
+  title,
+}) => {
+  const [customHex, setCustomHex] = useState(selectedColor || '#1E88E5');
+
+  React.useEffect(() => {
+    if (selectedColor) {
+      setCustomHex(selectedColor);
+    }
+  }, [selectedColor]);
+
+  const isValidHex = (hex: string): boolean => {
+    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
+  };
+
+  const handleCustomHexChange = (text: string) => {
+    // Auto-add # if not present
+    let formatted = text;
+    if (text.length > 0 && !text.startsWith('#')) {
+      formatted = '#' + text;
+    }
+    setCustomHex(formatted.toUpperCase());
+  };
+
+  const handleApplyCustomColor = () => {
+    if (isValidHex(customHex)) {
+      onColorChange(customHex);
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={colorPickerStyles.modalOverlay}>
+        <View style={colorPickerStyles.modalContent}>
+          <View style={colorPickerStyles.modalHeader}>
+            <Text style={colorPickerStyles.modalTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={colorPickerStyles.modalCloseButton}>
+              <Text style={colorPickerStyles.modalCloseButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Color Preview */}
+          <View style={colorPickerStyles.previewContainer}>
+            <View
+              style={[
+                colorPickerStyles.colorPreview,
+                { backgroundColor: isValidHex(customHex) ? customHex : '#CCCCCC' },
+              ]}
+            />
+            <Text style={colorPickerStyles.previewText}>
+              {isValidHex(customHex) ? customHex : 'Invalid color'}
+            </Text>
+          </View>
+
+          {/* Custom Hex Input */}
+          <View style={colorPickerStyles.customInputContainer}>
+            <TextInput
+              style={colorPickerStyles.hexInput}
+              value={customHex}
+              onChangeText={handleCustomHexChange}
+              placeholder="#FFFFFF"
+              maxLength={7}
+              autoCapitalize="characters"
+            />
+            <TouchableOpacity
+              style={[
+                colorPickerStyles.applyButton,
+                !isValidHex(customHex) && colorPickerStyles.applyButtonDisabled,
+              ]}
+              onPress={handleApplyCustomColor}
+              disabled={!isValidHex(customHex)}
+            >
+              <Text style={colorPickerStyles.applyButtonText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Color Swatches */}
+          <ScrollView style={colorPickerStyles.swatchesContainer}>
+            <View style={colorPickerStyles.swatchesGrid}>
+              {COLOR_SWATCHES.map((color, index) => (
+                <TouchableOpacity
+                  key={`${color}-${index}`}
+                  style={[
+                    colorPickerStyles.colorSwatch,
+                    { backgroundColor: color },
+                    selectedColor === color && colorPickerStyles.selectedSwatch,
+                  ]}
+                  onPress={() => {
+                    onColorChange(color);
+                    onClose();
+                  }}
+                >
+                  {selectedColor === color && (
+                    <Text style={colorPickerStyles.checkMark}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const colorPickerStyles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  modalCloseButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  modalCloseButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  previewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  colorPreview: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+  },
+  previewText: {
+    marginLeft: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  customInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  hexInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginRight: 12,
+  },
+  applyButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  applyButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  swatchesContainer: {
+    padding: 16,
+  },
+  swatchesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+  },
+  colorSwatch: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    margin: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  selectedSwatch: {
+    borderColor: '#333',
+    borderWidth: 3,
+  },
+  checkMark: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+});
+
 const ModalPicker: React.FC<ModalPickerProps> = ({
   visible,
   selectedValue,
@@ -141,6 +396,8 @@ export const PaymentScreen: React.FC = () => {
     useState(false);
   const [showBottomSheetPicker, setShowBottomSheetPicker] = useState(false);
   const [showIgnoreReceiptPicker, setShowIgnoreReceiptPicker] = useState(false);
+  const [showPrimaryColorPicker, setShowPrimaryColorPicker] = useState(false);
+  const [showSecondaryColorPicker, setShowSecondaryColorPicker] = useState(false);
 
   const handleInitializePayment = async () => {
     try {
@@ -302,35 +559,67 @@ export const PaymentScreen: React.FC = () => {
         />
 
         <Text style={styles.label}>Primary Color</Text>
-        <TextInput
-          style={styles.input}
-          value={config.additionValues?.primaryColor}
-          onChangeText={(value) =>
+        <TouchableOpacity
+          style={styles.colorPickerButton}
+          onPress={() => setShowPrimaryColorPicker(true)}
+        >
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: config.additionValues?.primaryColor || '#1E88E5' },
+            ]}
+          />
+          <Text style={styles.pickerButtonText}>
+            {config.additionValues?.primaryColor || '#1E88E5'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ColorPicker
+          visible={showPrimaryColorPicker}
+          selectedColor={config.additionValues?.primaryColor}
+          onColorChange={(color) => {
             setConfig({
               ...config,
               additionValues: {
                 ...config.additionValues,
-                primaryColor: value,
+                primaryColor: color,
               },
-            })
-          }
-          placeholder="Enter hex color (e.g., #1E88E5)"
+            });
+          }}
+          onClose={() => setShowPrimaryColorPicker(false)}
+          title="Select Primary Color"
         />
 
         <Text style={styles.label}>Secondary Color</Text>
-        <TextInput
-          style={styles.input}
-          value={config.additionValues?.secondaryColor}
-          onChangeText={(value) =>
+        <TouchableOpacity
+          style={styles.colorPickerButton}
+          onPress={() => setShowSecondaryColorPicker(true)}
+        >
+          <View
+            style={[
+              styles.colorSwatch,
+              { backgroundColor: config.additionValues?.secondaryColor || '#FFC107' },
+            ]}
+          />
+          <Text style={styles.pickerButtonText}>
+            {config.additionValues?.secondaryColor || '#FFC107'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ColorPicker
+          visible={showSecondaryColorPicker}
+          selectedColor={config.additionValues?.secondaryColor}
+          onColorChange={(color) => {
             setConfig({
               ...config,
               additionValues: {
                 ...config.additionValues,
-                secondaryColor: value,
+                secondaryColor: color,
               },
-            })
-          }
-          placeholder="Enter hex color (e.g., #FFC107)"
+            });
+          }}
+          onClose={() => setShowSecondaryColorPicker(false)}
+          title="Select Secondary Color"
         />
 
         <Text style={styles.label}>Ignore Receipt Screen</Text>
@@ -488,6 +777,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
+  },
+  colorPickerButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  colorSwatch: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   pickerButtonText: {
     fontSize: 16,
