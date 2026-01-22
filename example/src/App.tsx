@@ -1,4 +1,3 @@
-
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
 import { PaymentScreen } from './PaymentScreen';
 

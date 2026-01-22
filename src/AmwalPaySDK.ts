@@ -1,7 +1,11 @@
-import { initiate, onCustomerId, onResponse, type AmwalPayConfig } from './index';
+import {
+  initiate,
+  onCustomerId,
+  onResponse,
+  type AmwalPayConfig,
+} from './index';
 import NetworkClient from './network/NetworkClient';
 import { type EventSubscription } from 'react-native';
-
 
 class AmwalPaySDK {
   private static instance: AmwalPaySDK;
@@ -12,7 +16,6 @@ class AmwalPaySDK {
 
   private constructor() {
     // Initialize the event emitter
-
   }
 
   static getInstance(): AmwalPaySDK {
@@ -26,7 +29,9 @@ class AmwalPaySDK {
    * Initiates the payment process by first fetching a session token and then starting the payment flow
    * @param config The payment configuration
    */
-  async startPayment(config: Omit<AmwalPayConfig, 'sessionToken'>): Promise<void> {
+  async startPayment(
+    config: Omit<AmwalPayConfig, 'sessionToken'>
+  ): Promise<void> {
     try {
       // Set up event listeners before starting the payment process
       this.setupEventListeners(config);
@@ -35,7 +40,10 @@ class AmwalPaySDK {
       const networkClient = NetworkClient.getInstance();
 
       // Fetch session token
-      console.log('Fetching session token for environment:', config.environment);
+      console.log(
+        'Fetching session token for environment:',
+        config.environment
+      );
       const sessionToken = await networkClient.fetchSessionToken(
         config.environment,
         config.merchantId,
@@ -53,11 +61,14 @@ class AmwalPaySDK {
       // Create complete config with session token
       const completeConfig: AmwalPayConfig = {
         ...config,
-        sessionToken
+        sessionToken,
       };
 
       // Initiate the payment process
-      console.log('Initiating native payment with config:', JSON.stringify(completeConfig));
+      console.log(
+        'Initiating native payment with config:',
+        JSON.stringify(completeConfig)
+      );
       initiate(completeConfig);
     } catch (error) {
       console.error('Error starting payment:', error);
@@ -73,13 +84,21 @@ class AmwalPaySDK {
    * Sets up event listeners for AmwalPay events
    * @param config The payment configuration containing callback functions
    */
-  private setupEventListeners(config: Omit<AmwalPayConfig, 'sessionToken'>): void {
+  private setupEventListeners(
+    config: Omit<AmwalPayConfig, 'sessionToken'>
+  ): void {
     // Remove any existing listeners
     this.removeEventListeners();
 
     console.log('🟢 Setting up event listeners...');
-    console.log('🟢 onResponse callback exists?', typeof config.onResponse === 'function');
-    console.log('🟢 onCustomerId callback exists?', typeof config.onCustomerId === 'function');
+    console.log(
+      '🟢 onResponse callback exists?',
+      typeof config.onResponse === 'function'
+    );
+    console.log(
+      '🟢 onCustomerId callback exists?',
+      typeof config.onCustomerId === 'function'
+    );
 
     this.onResponseSubscription = onResponse((response) => {
       console.log('🟢 SDK onResponse listener triggered with:', response);

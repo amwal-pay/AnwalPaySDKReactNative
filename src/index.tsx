@@ -8,10 +8,7 @@ import ReactAmwalPay, {
 } from './NativeReactAmwalPay';
 import AmwalPaySDK from './AmwalPaySDK';
 import { UuidUtil } from './utils/UuidUtil';
-import {
-  NativeEventEmitter,
-  type EventSubscription,
-} from 'react-native';
+import { NativeEventEmitter, type EventSubscription } from 'react-native';
 
 // Create an event emitter for the native module
 const eventEmitter = new NativeEventEmitter(ReactAmwalPay as any);
@@ -47,10 +44,14 @@ export function initiate(config: AmwalPayConfig): void {
   ReactAmwalPay.initiate(nativeConfig);
 }
 
-export function onResponse(callback: (response: AmwalPayResponse) => void): EventSubscription {
+export function onResponse(
+  callback: (response: AmwalPayResponse) => void
+): EventSubscription {
   return eventEmitter.addListener('onResponse', callback);
 }
-export function onCustomerId(callback: (customerId: string) => void): EventSubscription {
+export function onCustomerId(
+  callback: (customerId: string) => void
+): EventSubscription {
   return eventEmitter.addListener('onCustomerId', callback);
 }
 
