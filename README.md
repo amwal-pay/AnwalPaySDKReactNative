@@ -54,7 +54,7 @@ Add the following configuration to your `ios/Podfile` inside the `post_install` 
 ```ruby
 post_install do |installer|
   react_native_post_install(installer, config[:reactNativePath])
-  
+
   # Set "Build Libraries for Distribution" to NO for amwalsdk
   installer.pods_project.targets.each do |target|
     if target.name == 'amwalsdk'
@@ -111,6 +111,7 @@ No additional Android configuration is required. The SDK uses React Native's aut
 ```gradle
 minSdkVersion = 24
 ```
+
 
 ### Step 5: Clean and Rebuild
 
