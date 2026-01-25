@@ -16,6 +16,7 @@ import {
   Environment,
   Currency,
   TransactionType,
+  Logger,
   type AmwalPayConfig,
 } from 'react-amwal-pay';
 import LogsViewer from './LogsViewer';
@@ -400,6 +401,11 @@ export const PaymentScreen: React.FC = () => {
     console.log('TransactionType.APPLE_PAY:', TransactionType.APPLE_PAY);
 
     LogsManager.addLog('PaymentScreen initialized', LogType.INFO);
+
+    // Initialize SDK Logger
+    const logger = Logger.getInstance();
+    logger.setDebugEnabled(true);
+    logger.info('PaymentScreen', 'Component initialized with enhanced logging');
   }, []);
 
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
@@ -422,11 +428,11 @@ export const PaymentScreen: React.FC = () => {
   });
 
   // Define callbacks separately to avoid stale closure issues
-  const handleCustomerId = React.useCallback((customerId: string) => {
-    setCustomerId(customerId);
-    console.log('Customer ID received:', customerId);
+  const handleCustomerId = React.useCallback((receivedCustomerId: string) => {
+    setCustomerId(receivedCustomerId);
+    console.log('Customer ID received:', receivedCustomerId);
     LogsManager.addLog(
-      `Customer ID received: ${customerId}`,
+      `Customer ID received: ${receivedCustomerId}`,
       LogType.CUSTOMER_ID
     );
   }, []);
@@ -509,6 +515,18 @@ export const PaymentScreen: React.FC = () => {
             accessibilityLabel="View SDK Logs"
           >
             <Text style={{ fontSize: 20, color: '#007AFF' }}>🐛</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.appBarButton}
+            onPress={() => {
+              const logger = Logger.getInstance();
+              const sdkLogs = logger.exportLogs();
+              console.log('SDK Logs:', sdkLogs);
+              Alert.alert('SDK Logs', 'Check console for detailed logs');
+            }}
+            accessibilityLabel="Export SDK Logs"
+          >
+            <Text style={{ fontSize: 20, color: '#28a745' }}>📋</Text>
           </TouchableOpacity>
           <ClearCustomerIdButton onPress={() => setCustomerId(null)} />
         </View>
