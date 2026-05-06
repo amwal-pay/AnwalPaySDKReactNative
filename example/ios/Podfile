@@ -34,28 +34,30 @@ target 'ReactAmwalPayExample' do
       # :ccache_enabled => true
     )
 
-    # React Native 0.79.x is not compatible with Xcode 26 / iOS 26 SDK.
-    # Patch ALL pod targets to use c++17 and disable -Werror so the build succeeds.
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
-        cfg.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        # Disable warnings-as-errors to avoid noisy build failures
         cfg.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
         cfg.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
 
-        # Strip hardcoded -std=c++20 and -Werror from OTHER_CPLUSPLUSFLAGS
-        flags = cfg.build_settings['OTHER_CPLUSPLUSFLAGS']
-        if flags
-          flags = [flags].flatten.join(' ')
-          flags = flags.gsub('-std=c++20', '-std=c++17').gsub(/\s*-Werror\b/, '')
-          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] = flags
-        end
+        # ── Size optimizations (release only) ──────────────────────────────
+        if cfg.name == 'Release'
+          # Strip dead code and symbols
+          cfg.build_settings['DEAD_CODE_STRIPPING']              = 'YES'
+          cfg.build_settings['STRIP_INSTALLED_PRODUCT']          = 'YES'
+          cfg.build_settings['STRIP_STYLE']                      = 'all'
+          cfg.build_settings['COPY_PHASE_STRIP']                 = 'YES'
 
-        # Also patch OTHER_CFLAGS
-        cflags = cfg.build_settings['OTHER_CFLAGS']
-        if cflags
-          cflags = [cflags].flatten.join(' ')
-          cflags = cflags.gsub(/\s*-Werror\b/, '')
-          cfg.build_settings['OTHER_CFLAGS'] = cflags
+          # Compiler optimizations
+          cfg.build_settings['GCC_OPTIMIZATION_LEVEL']           = 's'   # optimize for size
+          cfg.build_settings['SWIFT_OPTIMIZATION_LEVEL']         = '-Osize'
+
+          # Remove debug symbols from the binary (dSYM is kept separately)
+          cfg.build_settings['DEBUG_INFORMATION_FORMAT']         = 'dwarf-with-dsym'
+          cfg.build_settings['GCC_GENERATE_DEBUGGING_SYMBOLS']   = 'NO'
+
+          # Enable Link-Time Optimization for cross-module dead-code elimination
+          cfg.build_settings['LLVM_LTO']                         = 'YES'
         end
       end
 
@@ -66,16 +68,6 @@ target 'ReactAmwalPayExample' do
           cfg.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
         end
       end
-    end
-
-    # Also patch xcconfig files for pods that hardcode flags (e.g. Yoga, fmt)
-    Dir.glob(File.join(installer.sandbox.root, 'Target Support Files', '**', '*.xcconfig')).each do |xcconfig_path|
-      content = File.read(xcconfig_path)
-      changed = false
-      new_content = content
-        .gsub('-std=c++20') { changed = true; '-std=c++17' }
-        .gsub(/ -Werror(?![=\w])/) { changed = true; '' }
-      File.write(xcconfig_path, new_content) if changed
     end
 
   end
