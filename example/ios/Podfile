@@ -61,6 +61,17 @@ target 'ReactAmwalPayExample' do
         end
       end
 
+      # ── Xcode 26 / Clang 26 fix for fmt ────────────────────────────────
+      # Xcode 26 tightened consteval enforcement in C++20. The fmt pod vendored
+      # inside React Native uses a consteval pattern that no longer compiles.
+      # Scoping fmt to C++17 skips the consteval path without affecting the
+      # rest of the project which legitimately needs C++20.
+      if target.name == 'fmt'
+        target.build_configurations.each do |cfg|
+          cfg.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+        end
+      end
+
       # Set "Build Libraries for Distribution" to NO for amwalsdk and exclude x86_64
       if target.name == 'amwalsdk'
         target.build_configurations.each do |cfg|
