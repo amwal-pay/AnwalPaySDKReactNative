@@ -4,7 +4,7 @@ workflows:
     max_build_duration: 60
     integrations:
       app_store_connect: Amwal CodeMagic
-      
+
     environment:
       groups:
         - firebase_credentials
@@ -20,10 +20,10 @@ workflows:
         XCODE_WORKSPACE: "ReactAmwalPayExample.xcworkspace"
         XCODE_SCHEME: "ReactAmwalPayExample"
       node: "$NODE_VERSION"
-      xcode: latest
+      xcode: 16.3
       java: 17
       cocoapods: default
-    
+
     scripts:
       - name: Install dependencies
         script: |
@@ -41,11 +41,11 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           cd example/ios
-          xcode-project use-profiles 
+          xcode-project use-profiles
 
-      - name: Build iOS 
+      - name: Build iOS
         script: |
-          cd example/ios 
+          cd example/ios
           pod install
           xcode-project build-ipa \
               --workspace "$XCODE_WORKSPACE" \
@@ -63,7 +63,7 @@ workflows:
         android:
           app_id: $FIREBASE_ANDROID_APP_ID
           artifact_type: 'apk'
-          groups: 
+          groups:
             - tester
       email:
         recipients:
