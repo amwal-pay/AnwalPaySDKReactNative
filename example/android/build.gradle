@@ -14,8 +14,19 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
     }
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force "org.jetbrains.kotlin:kotlin-stdlib:2.0.21"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21"
+            force "org.jetbrains.kotlin:kotlin-stdlib-common:2.0.21"
+        }
+    }
+}
