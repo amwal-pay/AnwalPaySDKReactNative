@@ -40,6 +40,7 @@ class NetworkClient {
     customerId: string | null,
     secureHashValue: string
   ): Promise<string | null> {
+    console.log('🟡 [NetworkClient] fetchSessionToken called');
     try {
       this.logger.info('NetworkClient', 'Fetching session token', {
         environment: Environment[env],
@@ -48,6 +49,7 @@ class NetworkClient {
       });
 
       const webhookUrl = this.getWebhookUrl(env);
+      console.log('🟡 [NetworkClient] Webhook URL:', webhookUrl);
 
       const dataMap = {
         merchantId,
@@ -59,14 +61,29 @@ class NetworkClient {
         dataMap
       );
 
+      console.log('🟡 [NetworkClient] About to make fetch request');
       this.logger.debug('NetworkClient', 'Making API request', {
         url: `${webhookUrl}Membership/GetSDKSessionToken`,
         method: 'POST',
       });
 
-      const response = await fetch(
-        `${webhookUrl}Membership/GetSDKSessionToken`,
-        {
+      // Create a timeout promise (30 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          console.log('🔴 [NetworkClient] Timeout triggered after 30 seconds');
+          reject(
+            new Error('Request timeout - please check your network connection')
+          );
+        }, 30000);
+      });
+
+      console.log(
+        '🟡 [NetworkClient] Starting Promise.race with fetch and timeout'
+      );
+
+      // Race between fetch and timeout
+      const response = await Promise.race([
+        fetch(`${webhookUrl}Membership/GetSDKSessionToken`, {
           method: 'POST',
           headers: {
             'Accept': 'text/plain',
@@ -78,10 +95,13 @@ class NetworkClient {
             secureHashValue: secureHash,
             customerId,
           }),
-        }
-      );
+        }),
+        timeoutPromise,
+      ]);
 
+      console.log('🟡 [NetworkClient] Fetch completed, parsing response');
       const responseData = await response.json();
+      console.log('🟡 [NetworkClient] Response data:', responseData);
 
       this.logger.debug('NetworkClient', 'API response received', {
         status: response.status,
@@ -90,11 +110,13 @@ class NetworkClient {
       });
 
       if (response.ok && responseData.success) {
+        console.log('🟢 [NetworkClient] Session token fetched successfully');
         this.logger.info('NetworkClient', 'Session token fetched successfully');
         return responseData.data.sessionToken;
       } else {
         const errorMessage =
           responseData.errorList?.join(',') || 'Unknown error';
+        console.log('🔴 [NetworkClient] API request failed:', errorMessage);
         this.logger.error('NetworkClient', 'API request failed', {
           status: response.status,
           errorMessage,
@@ -104,8 +126,11 @@ class NetworkClient {
         return null;
       }
     } catch (error) {
+      console.log('🔴 [NetworkClient] Exception caught:', error);
       this.logger.error('NetworkClient', 'Network request failed', error);
-      this.showErrorDialog('Something Went Wrong');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Something Went Wrong';
+      this.showErrorDialog(errorMessage);
       return null;
     }
   }

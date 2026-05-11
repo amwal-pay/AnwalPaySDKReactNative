@@ -15,6 +15,8 @@ import { NativeEventEmitter, type EventSubscription } from 'react-native';
 const eventEmitter = new NativeEventEmitter(ReactAmwalPay as any);
 
 export function initiate(config: AmwalPayConfig): void {
+  console.log('🟠 [index.tsx] initiate function called');
+
   // Create default additionValues with merchantIdentifier for iOS if not provided
   const defaultAdditionValues = {
     merchantIdentifier: 'merchant.applepay.amwalpay',
@@ -41,8 +43,20 @@ export function initiate(config: AmwalPayConfig): void {
     merchantReference: config.merchantReference,
   };
 
-  // Call the native module
-  ReactAmwalPay.initiate(nativeConfig);
+  console.log(
+    '🟠 [index.tsx] Native config prepared:',
+    JSON.stringify(nativeConfig, null, 2)
+  );
+  console.log('🟠 [index.tsx] About to call ReactAmwalPay.initiate');
+
+  try {
+    // Call the native module
+    ReactAmwalPay.initiate(nativeConfig);
+    console.log('🟢 [index.tsx] ReactAmwalPay.initiate call completed');
+  } catch (error) {
+    console.log('🔴 [index.tsx] Error calling ReactAmwalPay.initiate:', error);
+    throw error;
+  }
 }
 
 export function onResponse(

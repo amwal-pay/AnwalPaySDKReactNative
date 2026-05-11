@@ -26,6 +26,24 @@ target 'ReactAmwalPayExample' do
   )
  
   post_install do |installer|
+    # ── Xcode 26 / Clang 26 fix for fmt ────────────────────────────────
+    # CRITICAL: Must be set BEFORE react_native_post_install runs
+    # Xcode 26 tightened consteval enforcement in C++20. The fmt pod vendored
+    # inside React Native uses a consteval pattern that no longer compiles.
+    # Scoping fmt to C++17 skips the consteval path without affecting the
+    # rest of the project which legitimately needs C++20.
+    installer.pods_project.targets.each do |target|
+      if target.name == 'fmt'
+        target.build_configurations.each do |cfg|
+          cfg.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+          cfg.build_settings['GCC_C_LANGUAGE_STANDARD'] = 'c17'
+          # Add compiler flags to suppress consteval errors as additional safety
+          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(inherited)']
+          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-error=consteval'
+          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-consteval'
+        end
+      end
+    end
 
     react_native_post_install(
       installer,
@@ -61,14 +79,15 @@ target 'ReactAmwalPayExample' do
         end
       end
 
-      # ── Xcode 26 / Clang 26 fix for fmt ────────────────────────────────
-      # Xcode 26 tightened consteval enforcement in C++20. The fmt pod vendored
-      # inside React Native uses a consteval pattern that no longer compiles.
-      # Scoping fmt to C++17 skips the consteval path without affecting the
-      # rest of the project which legitimately needs C++20.
+      # Re-apply fmt C++17 fix AFTER react_native_post_install to ensure it sticks
       if target.name == 'fmt'
         target.build_configurations.each do |cfg|
           cfg.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+          cfg.build_settings['GCC_C_LANGUAGE_STANDARD'] = 'c17'
+          # Add compiler flags to suppress consteval errors as additional safety
+          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(inherited)']
+          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-error=consteval'
+          cfg.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-consteval'
         end
       end
 

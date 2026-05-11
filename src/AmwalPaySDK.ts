@@ -63,6 +63,7 @@ class AmwalPaySDK {
     config: Omit<AmwalPayConfig, 'sessionToken'>
   ): Promise<void> {
     try {
+      console.log('🔵 [AmwalPaySDK] Starting payment process');
       this.logger.info('AmwalPaySDK', 'Starting payment process', {
         merchantId: config.merchantId,
         customerId: config.customerId,
@@ -70,12 +71,14 @@ class AmwalPaySDK {
       });
 
       // Set up event listeners before starting the payment process
+      console.log('🔵 [AmwalPaySDK] Setting up event listeners');
       this.setupEventListeners(config);
 
       // Get network client instance
       const networkClient = NetworkClient.getInstance();
 
       // Fetch session token
+      console.log('🔵 [AmwalPaySDK] About to fetch session token');
       this.logger.debug('AmwalPaySDK', 'Fetching session token', {
         environment: config.environment,
         merchantId: config.merchantId,
@@ -88,7 +91,13 @@ class AmwalPaySDK {
         config.secureHash
       );
 
+      console.log(
+        '🔵 [AmwalPaySDK] Session token fetch completed:',
+        sessionToken ? 'SUCCESS' : 'FAILED'
+      );
+
       if (!sessionToken) {
+        console.log('🔴 [AmwalPaySDK] No session token received - aborting');
         this.logger.error('AmwalPaySDK', 'Failed to fetch session token');
         return;
       }
@@ -102,6 +111,7 @@ class AmwalPaySDK {
       };
 
       // Initiate the payment process
+      console.log('🔵 [AmwalPaySDK] Calling native initiate method');
       this.logger.debug(
         'AmwalPaySDK',
         'Initiating native payment',
@@ -109,8 +119,10 @@ class AmwalPaySDK {
       );
       initiate(completeConfig);
 
+      console.log('🟢 [AmwalPaySDK] Payment process initiated successfully');
       this.logger.info('AmwalPaySDK', 'Payment process initiated successfully');
     } catch (error) {
+      console.log('🔴 [AmwalPaySDK] Error in startPayment:', error);
       this.logger.error('AmwalPaySDK', 'Error starting payment', error);
     }
   }

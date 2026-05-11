@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Modal,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import {
   AmwalPaySDK,
@@ -386,6 +387,7 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
 export const PaymentScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [showLogsViewer, setShowLogsViewer] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Debug enum values
   React.useEffect(() => {
@@ -457,10 +459,18 @@ export const PaymentScreen: React.FC = () => {
     useState(false);
 
   const handleInitializePayment = async () => {
+    if (isLoading) {
+      console.log('🟡 [PaymentScreen] Already loading, ignoring button press');
+      return;
+    }
+
+    setIsLoading(true);
     try {
+      console.log('🟣 [PaymentScreen] handleInitializePayment called');
       LogsManager.addLog('Starting payment initialization', LogType.INFO);
 
       if (!isConfigValid()) {
+        console.log('🔴 [PaymentScreen] Config validation failed');
         Alert.alert('Error', 'Please fill in all required fields');
         LogsManager.addLog(
           'Payment initialization failed: Invalid configuration',
@@ -469,6 +479,7 @@ export const PaymentScreen: React.FC = () => {
         return;
       }
 
+      console.log('🟣 [PaymentScreen] Config is valid, proceeding...');
       LogsManager.addLog(
         `Initializing payment with merchant: ${config.merchantId}`,
         LogType.INFO
@@ -480,14 +491,29 @@ export const PaymentScreen: React.FC = () => {
         onCustomerId: handleCustomerId,
         onResponse: handleResponse,
       };
+
+      console.log('🟣 [PaymentScreen] Getting SDK instance');
       const amwalPay = AmwalPaySDK.getInstance();
+
+      console.log('🟣 [PaymentScreen] Calling startPayment');
       await amwalPay.startPayment(paymentConfig as AmwalPayConfig);
 
+      console.log('🟢 [PaymentScreen] startPayment completed');
       LogsManager.addLog('Payment SDK started successfully', LogType.INFO);
     } catch (e) {
+      console.log(
+        '🔴 [PaymentScreen] Exception in handleInitializePayment:',
+        e
+      );
       Alert.alert('Error', 'Error starting payment');
       console.log(e);
       LogsManager.addLog(`Payment initialization error: ${e}`, LogType.ERROR);
+    } finally {
+      // Don't set loading to false here - let the payment flow complete
+      // The loading state will be cleared when we get a response or the user closes the payment
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 2000); // Give the native module 2 seconds to show the payment UI
     }
   };
 
@@ -784,10 +810,18 @@ export const PaymentScreen: React.FC = () => {
           title="Use Bottom Sheet Design"
         />
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleInitializePayment}
+          disabled={isLoading}
         >
-          <Text style={styles.buttonText}>Start Payment</Text>
+          {isLoading ? (
+            <View style={styles.buttonContent}>
+              <ActivityIndicator color="#fff" style={styles.buttonSpinner} />
+              <Text style={styles.buttonText}>Loading...</Text>
+            </View>
+          ) : (
+            <Text style={styles.buttonText}>Start Payment</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
@@ -859,6 +893,18 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 24,
     marginBottom: 32,
+  },
+  buttonDisabled: {
+    backgroundColor: '#999',
+    opacity: 0.6,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonSpinner: {
+    marginRight: 8,
   },
   buttonText: {
     color: '#fff',
