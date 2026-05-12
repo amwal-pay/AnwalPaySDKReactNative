@@ -20,7 +20,7 @@ workflows:
         XCODE_WORKSPACE: "ReactAmwalPayExample.xcworkspace"
         XCODE_SCHEME: "ReactAmwalPayExample"
       node: "$NODE_VERSION"
-      xcode: latest
+      xcode: 16.0
       java: 17
       cocoapods: default
 

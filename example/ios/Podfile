@@ -42,6 +42,27 @@ target 'ReactAmwalPayExample' do
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
       end
     end
+    
+    # Fix fmt compilation issues with Xcode 26.4 and C++20
+    if target.name == 'fmt'
+      target.build_configurations.each do |config|
+        # Add compiler flags to fix C++20 compatibility issues
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(OTHER_CFLAGS)']
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-error'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-unguarded-availability-new'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-deprecated-declarations'
+        config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      end
+    end
+    
+    # Apply similar fixes to other C++ targets that might have issues
+    ['RCT-Folly', 'glog', 'boost'].each do |cpp_target|
+      if target.name == cpp_target
+        target.build_configurations.each do |config|
+          config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+        end
+      end
+    end
   end
 end
 end
