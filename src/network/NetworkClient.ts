@@ -38,14 +38,17 @@ class NetworkClient {
     env: Environment,
     merchantId: string,
     customerId: string | null,
-    secureHashValue: string
+    secureHashValue: string,
+    retryCount: number = 0,
+    maxRetries: number = 2
   ): Promise<string | null> {
-    console.log('🟡 [NetworkClient] fetchSessionToken called');
+    console.log('🟡 [NetworkClient] fetchSessionToken called', { retryCount });
     try {
       this.logger.info('NetworkClient', 'Fetching session token', {
         environment: Environment[env],
         merchantId,
         hasCustomerId: !!customerId,
+        retryCount,
       });
 
       const webhookUrl = this.getWebhookUrl(env);
@@ -67,14 +70,14 @@ class NetworkClient {
         method: 'POST',
       });
 
-      // Create a timeout promise (30 seconds)
+      // Create a timeout promise (60 seconds for better reliability)
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          console.log('🔴 [NetworkClient] Timeout triggered after 30 seconds');
+          console.log('🔴 [NetworkClient] Timeout triggered after 60 seconds');
           reject(
             new Error('Request timeout - please check your network connection')
           );
-        }, 30000);
+        }, 60000);
       });
 
       console.log(
@@ -122,17 +125,58 @@ class NetworkClient {
           errorMessage,
           responseData,
         });
+
+        // Retry on server errors (5xx) or specific client errors
+        if (
+          retryCount < maxRetries &&
+          (response.status >= 500 || response.status === 408)
+        ) {
+          console.log(
+            `🟡 [NetworkClient] Retrying request (attempt ${retryCount + 1}/${maxRetries})`
+          );
+          await this.delay(1000 * (retryCount + 1)); // Exponential backoff
+          return this.fetchSessionToken(
+            env,
+            merchantId,
+            customerId,
+            secureHashValue,
+            retryCount + 1,
+            maxRetries
+          );
+        }
+
         this.showErrorDialog(errorMessage);
         return null;
       }
     } catch (error) {
       console.log('🔴 [NetworkClient] Exception caught:', error);
       this.logger.error('NetworkClient', 'Network request failed', error);
+
+      // Retry on network errors
+      if (retryCount < maxRetries) {
+        console.log(
+          `🟡 [NetworkClient] Retrying after error (attempt ${retryCount + 1}/${maxRetries})`
+        );
+        await this.delay(1000 * (retryCount + 1)); // Exponential backoff
+        return this.fetchSessionToken(
+          env,
+          merchantId,
+          customerId,
+          secureHashValue,
+          retryCount + 1,
+          maxRetries
+        );
+      }
+
       const errorMessage =
         error instanceof Error ? error.message : 'Something Went Wrong';
       this.showErrorDialog(errorMessage);
       return null;
     }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private showErrorDialog(message: string): void {

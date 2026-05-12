@@ -8,45 +8,45 @@ import UIKit
 /// When 3DS opens its WebView, it can present on top without dismissing the SDK
 class ShareableContainerViewController: UIViewController {
     private let sdkViewController: UIViewController
-    
+
     init(sdkViewController: UIViewController) {
         self.sdkViewController = sdkViewController
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         // Add SDK view controller as child - this keeps it alive during 3DS presentation
         addChild(sdkViewController)
         view.addSubview(sdkViewController.view)
         sdkViewController.view.frame = view.bounds
         sdkViewController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         sdkViewController.didMove(toParent: self)
-        
+
         view.backgroundColor = .clear
         sdkViewController.view.backgroundColor = .clear
-        
+
         // Enable presentation context to handle 3DS WebView presentation
         // This is critical: allows 3DS WebView to present on top without dismissing the SDK
         definesPresentationContext = true
         providesPresentationContextTransitionStyle = true
-        
+
         // Ensure the SDK view controller also allows nested presentations
         // This prevents it from being dismissed when 3DS presents its WebView
         sdkViewController.definesPresentationContext = true
         sdkViewController.providesPresentationContextTransitionStyle = true
     }
-    
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         // Ensure container is ready for nested presentations
     }
-    
+
     private func topmostPresentedViewController() -> UIViewController {
         var topController: UIViewController = self
         while let presented = topController.presentedViewController {
@@ -54,7 +54,7 @@ class ShareableContainerViewController: UIViewController {
         }
         return topController
     }
-    
+
     override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
         // If already presenting, present from the topmost controller
         // This allows 3DS WebView to present on top without dismissing the SDK
@@ -72,15 +72,15 @@ public extension UIViewController {
     static let swizzlePresentOnce: Void = {
         let originalSelector = #selector(UIViewController.present(_:animated:completion:))
         let swizzledSelector = #selector(UIViewController.swizzled_present(_:animated:completion:))
-        
+
         guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
               let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
             return
         }
-        
+
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }()
-    
+
     @objc dynamic func swizzled_present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
         // Check if this view controller's view is in the window hierarchy
         if self.view.window == nil {
@@ -91,7 +91,7 @@ public extension UIViewController {
                 return
             }
         }
-        
+
         // Special handling for ShareableContainerViewController and its children
         // If presenting from a child of ShareableContainerViewController, forward to container
         if let container = findShareableContainer() {
@@ -110,11 +110,11 @@ public extension UIViewController {
             }
             return
         }
-        
+
         // Call original implementation
         self.swizzled_present(viewControllerToPresent, animated: flag, completion: completion)
     }
-    
+
     // Helper to find ShareableContainerViewController in parent hierarchy
     private func findShareableContainer() -> ShareableContainerViewController? {
         var current: UIViewController? = self
@@ -129,10 +129,10 @@ public extension UIViewController {
         }
         return nil
     }
-    
+
     static func getTopMostViewController() -> UIViewController? {
         var topController: UIViewController?
-        
+
         if #available(iOS 13.0, *) {
             let keyWindow = UIApplication.shared.connectedScenes
                 .compactMap { $0 as? UIWindowScene }
@@ -142,11 +142,11 @@ public extension UIViewController {
         } else {
             topController = UIApplication.shared.keyWindow?.rootViewController
         }
-        
+
         while let presented = topController?.presentedViewController {
             topController = presented
         }
-        
+
         return topController
     }
 }
@@ -155,12 +155,12 @@ public extension UIViewController {
 open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
     private var sdkWindow: UIWindow?  // Separate window for SDK to avoid modal dismissal issues
-    
+
     // Initialize swizzling when the class is first loaded
     private static let initializeSwizzling: Void = {
         _ = UIViewController.swizzlePresentOnce
     }()
-    
+
     // Initialize swizzling when the module is loaded
     public override init() {
         super.init()
@@ -211,14 +211,14 @@ open class ReactAmwalPay: RCTEventEmitter {
         default: return .PROD
         }
     }
-    
+
     private func mapCurrency(currency: String) -> Config.Currency {
         switch currency {
         case "OMR": return .OMR
         default: return .OMR
         }
     }
-    
+
     private func mapTransactionType(transactionType: String) -> Config.TransactionType {
         switch transactionType {
         case "CARD_WALLET": return .cardWallet
@@ -227,7 +227,7 @@ open class ReactAmwalPay: RCTEventEmitter {
         default: return .cardWallet
         }
     }
-    
+
     private func mapLocale(locale: String) -> Config.Locale {
         switch locale {
         case "en": return .en
@@ -235,7 +235,7 @@ open class ReactAmwalPay: RCTEventEmitter {
         default: return .en
         }
     }
-    
+
     private func prepareConfig(config: [String: Any]) -> Config {
         // Handle additionValues
         var additionValues: [String: String] = Config.generateDefaultAdditionValues()
@@ -261,110 +261,142 @@ open class ReactAmwalPay: RCTEventEmitter {
             merchantReference: config["merchantReference"] as? String
         )
     }
-    
+
     @objc
     open func initiate(_ config: [String: Any]) {
-      DispatchQueue.main.async {
-           do {
-               let sdkConfig = self.prepareConfig(config: config)
-               let sdk = AmwalSDK()
+        print("🟠 [ReactAmwalPay] initiate called on thread: \(Thread.isMainThread ? "MAIN" : "BACKGROUND")")
 
-               guard let rootVC = UIApplication.shared.keyWindow?.rootViewController else {
-                   let errorData: [String: Any] = [
-                       "data": [
-                           "status": "ERROR",
-                           "message": "No root view controller found"
-                       ]
-                   ]
-                   self.emitOnResponse(errorData)
-                   return
-               }
+        // CRITICAL: Move EVERYTHING to main thread to avoid Flutter engine threading errors
+        // React Native calls @objc methods on background thread, but Flutter REQUIRES main thread
+        DispatchQueue.main.async {
+            print("🟠 [ReactAmwalPay] Now on main thread, preparing config...")
+            let sdkConfig = self.prepareConfig(config: config)
+            print("🟠 [ReactAmwalPay] Config prepared, scheduling SDK creation with delay")
 
-               let sdkVC = try sdk.createViewController(
-                   config: sdkConfig,
-                   onResponse: { [weak self] response in
-                       print("🟠 SDK onResponse callback fired!")
-                       print("🟠 Response type: \(type(of: response))")
-                       print("🟠 Response value: \(response ?? "nil")")
+            // Add a small delay to allow UI to update (show loading indicator)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                print("🟠 [ReactAmwalPay] Starting SDK initialization (still on main thread)")
+                do {
+                    print("🟠 [ReactAmwalPay] Creating AmwalSDK instance...")
+                    let sdk = AmwalSDK()
+                    print("🟠 [ReactAmwalPay] AmwalSDK instance created")
 
-                       // Dismiss SDK window when payment completes
-                       DispatchQueue.main.async {
-                           self?.dismissSDKWindow()
-                       }
+                    print("🟠 [ReactAmwalPay] Creating view controller (Flutter engine will initialize now)...")
+                    let sdkVC = try sdk.createViewController(
+                        config: sdkConfig,
+                    onResponse: { [weak self] response in
+                        print("🟠 SDK onResponse callback fired!")
+                        print("🟠 Response type: \(type(of: response))")
+                        print("🟠 Response value: \(response ?? "nil")")
 
-                       // The SDK returns a JSON string, we need to parse it
-                       if let responseString = response as? String,
-                          let data = responseString.data(using: .utf8),
-                          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                           print("🟠 Successfully parsed JSON string to dictionary")
-                           self?.emitOnResponse(json)
-                       } else if let responseDict = response as? [String: Any] {
-                           print("🟠 Response is already a dictionary")
-                           self?.emitOnResponse(responseDict)
-                       } else {
-                           print("🟠 Could not parse response, sending as-is")
-                           let errorData: [String: Any] = [
-                               "status": "error",
-                               "message": "Invalid response format",
-                               "rawResponse": String(describing: response)
-                           ]
-                           self?.emitOnResponse(errorData)
-                       }
-                   },
-                   onCustomerId: { [weak self] customerId in
-                       print("🟠 SDK onCustomerId callback fired with: \(customerId ?? "nil")")
-                       self?.emitOnCustomerId(customerId)
-                   }
-               )
+                        // Dismiss SDK window when payment completes
+                        DispatchQueue.main.async {
+                            self?.dismissSDKWindow()
+                        }
 
-               // Ensure transparency
-               sdkVC.view.backgroundColor = .clear
-               sdkVC.view.isOpaque = false
-               
-               // Wrap SDK view controller in container
-               let containerVC = ShareableContainerViewController(sdkViewController: sdkVC)
-               containerVC.view.backgroundColor = .clear
+                        // The SDK returns a JSON string, we need to parse it
+                        if let responseString = response as? String,
+                           let data = responseString.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                            print("🟠 Successfully parsed JSON string to dictionary")
+                            self?.emitOnResponse(json)
+                        } else if let responseDict = response as? [String: Any] {
+                            print("🟠 Response is already a dictionary")
+                            self?.emitOnResponse(responseDict)
+                        } else {
+                            print("🟠 Could not parse response, sending as-is")
+                            let errorData: [String: Any] = [
+                                "status": "error",
+                                "message": "Invalid response format",
+                                "rawResponse": String(describing: response)
+                            ]
+                            self?.emitOnResponse(errorData)
+                        }
+                    },
+                    onCustomerId: { [weak self] customerId in
+                        print("🟠 SDK onCustomerId callback fired with: \(customerId ?? "nil")")
+                        self?.emitOnCustomerId(customerId)
+                    }
+                )
 
-               print("🟠 SDK ViewController wrapped in container")
-               print("🟠 Creating separate window for SDK...")
+                print("🟠 [ReactAmwalPay] SDK ViewController created successfully!")
+                print("🟠 [ReactAmwalPay] SDK VC class: \(type(of: sdkVC))")
+                print("🟠 [ReactAmwalPay] SDK VC presentation style: \(sdkVC.modalPresentationStyle.rawValue)")
 
-               // Create a separate window for the SDK
-               // This prevents modal presentation issues - SDK lives in its own window
-               // 3DS can present on top without affecting the SDK
-               if #available(iOS 13.0, *) {
-                   if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                       self.sdkWindow = UIWindow(windowScene: windowScene)
-                   }
-               } else {
-                   self.sdkWindow = UIWindow(frame: UIScreen.main.bounds)
-               }
-               
-               guard let sdkWindow = self.sdkWindow else {
-                   print("🟠 Failed to create SDK window, falling back to modal presentation")
-                   rootVC.present(containerVC, animated: true)
-                   return
-               }
-               
-               sdkWindow.rootViewController = containerVC
-               sdkWindow.windowLevel = .normal + 1  // Above main window
-               sdkWindow.backgroundColor = .clear
-               sdkWindow.isOpaque = false
-               sdkWindow.makeKeyAndVisible()
-               
-               print("🟠 SDK window created and made visible")
-           } catch {
-               print("Presentation failed: \(error.localizedDescription)")
-               let errorData: [String: Any] = [
-                   "data": [
-                       "status": "ERROR",
-                       "message": error.localizedDescription
-                   ]
-               ]
-               self.emitOnResponse(errorData)
-           }
-       }
+                // Ensure transparency
+                sdkVC.view.backgroundColor = .clear
+                sdkVC.view.isOpaque = false
+                print("🟠 [ReactAmwalPay] Set SDK view to transparent")
+
+                // Wrap SDK view controller in container
+                let containerVC = ShareableContainerViewController(sdkViewController: sdkVC)
+                containerVC.view.backgroundColor = .clear
+                print("🟠 [ReactAmwalPay] SDK ViewController wrapped in container")
+
+                print("🟠 [ReactAmwalPay] Creating separate window for SDK...")
+
+                // Create a separate window for the SDK
+                // This prevents modal presentation issues - SDK lives in its own window
+                // 3DS can present on top without affecting the SDK
+                if #available(iOS 13.0, *) {
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                        print("🟠 [ReactAmwalPay] Found window scene: \(windowScene)")
+                        self.sdkWindow = UIWindow(windowScene: windowScene)
+                        print("🟠 [ReactAmwalPay] Created window with scene")
+                    } else {
+                        print("🔴 [ReactAmwalPay] No window scene found!")
+                    }
+                } else {
+                    self.sdkWindow = UIWindow(frame: UIScreen.main.bounds)
+                    print("🟠 [ReactAmwalPay] Created window with frame (iOS < 13)")
+                }
+
+                guard let sdkWindow = self.sdkWindow else {
+                    print("🔴 [ReactAmwalPay] Failed to create SDK window - sdkWindow is nil")
+                    let errorData: [String: Any] = [
+                        "data": [
+                            "status": "ERROR",
+                            "message": "Failed to create SDK window"
+                        ]
+                    ]
+                    self.emitOnResponse(errorData)
+                    return
+                }
+
+                print("🟠 [ReactAmwalPay] SDK window created: \(sdkWindow)")
+                print("🟠 [ReactAmwalPay] Setting window properties...")
+
+                sdkWindow.rootViewController = containerVC
+                print("🟠 [ReactAmwalPay] Set root view controller")
+
+                sdkWindow.windowLevel = .normal + 1  // Above main window
+                print("🟠 [ReactAmwalPay] Set window level to \(sdkWindow.windowLevel.rawValue)")
+
+                sdkWindow.backgroundColor = .clear
+                sdkWindow.isOpaque = false
+                print("🟠 [ReactAmwalPay] Set window to transparent")
+
+                print("🟠 [ReactAmwalPay] Making window key and visible...")
+                sdkWindow.makeKeyAndVisible()
+
+                print("🟠 [ReactAmwalPay] ✅ SDK window is now visible!")
+                print("🟠 [ReactAmwalPay] Window frame: \(sdkWindow.frame)")
+                print("🟠 [ReactAmwalPay] Window isHidden: \(sdkWindow.isHidden)")
+                print("🟠 [ReactAmwalPay] Window isKeyWindow: \(sdkWindow.isKeyWindow)")
+                } catch {
+                    print("🔴 Presentation failed: \(error.localizedDescription)")
+                    let errorData: [String: Any] = [
+                        "data": [
+                            "status": "ERROR",
+                            "message": error.localizedDescription
+                        ]
+                    ]
+                    self.emitOnResponse(errorData)
+                }
+            }
+        }
     }
-    
+
     @objc
     open override func addListener(_ eventName: String) {
         super.addListener(eventName)
@@ -385,7 +417,7 @@ open class ReactAmwalPay: RCTEventEmitter {
     public override static func requiresMainQueueSetup() -> Bool {
         return true
     }
-    
+
     // Dismiss SDK window when payment completes
     private func dismissSDKWindow() {
         print("🟠 Dismissing SDK window...")

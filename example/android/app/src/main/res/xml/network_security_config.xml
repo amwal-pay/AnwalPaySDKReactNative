@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow all HTTPS connections for SIT/UAT test environments -->
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- SIT Environment -->
+        <domain includeSubdomains="true">test.amwalpg.com</domain>
+        <!-- Production Environment -->
+        <domain includeSubdomains="true">webhook.amwalpg.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    
+    <!-- Allow cleartext traffic for localhost (Metro bundler in development) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">10.0.3.2</domain>
+    </domain-config>
+
+    <!-- Base configuration for all other domains -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
