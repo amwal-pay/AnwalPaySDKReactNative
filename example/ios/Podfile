@@ -43,15 +43,21 @@ target 'ReactAmwalPayExample' do
       end
     end
     
-    # Fix fmt compilation issues with Xcode 26.4 and C++20
+    # Fix fmt compilation issues with Xcode 26 and C++20
     if target.name == 'fmt'
       target.build_configurations.each do |config|
-        # Add compiler flags to fix C++20 compatibility issues
+        # Comprehensive compiler flags to fix C++20 compatibility issues
         config.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(OTHER_CFLAGS)']
         config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-error'
         config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-unguarded-availability-new'
         config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-deprecated-declarations'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-shorten-64-to-32'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-comma'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-unreachable-code'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-conditional-uninitialized'
+        config.build_settings['OTHER_CPLUSPLUSFLAGS'] << '-Wno-deprecated-copy'
         config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
       end
     end
     

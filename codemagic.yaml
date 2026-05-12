@@ -20,7 +20,7 @@ workflows:
         XCODE_WORKSPACE: "ReactAmwalPayExample.xcworkspace"
         XCODE_SCHEME: "ReactAmwalPayExample"
       node: "$NODE_VERSION"
-      xcode: 16.0
+      xcode: edge
       java: 17
       cocoapods: default
 
@@ -51,6 +51,39 @@ workflows:
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME" \
               --archive-flags="-destination 'generic/platform=iOS' BUILD_LIBRARIES_FOR_DISTRIBUTION=NO"
+      
+      - name: Upload to App Store Connect (with retry)
+        script: |
+          IPA_PATH="example/ios/build/ios/ipa/ReactAmwalPayExample.ipa"
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Upload attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES"
+            
+            if app-store-connect publish --path "$IPA_PATH" 2>&1 | tee upload_log.txt; then
+              # Check if upload actually succeeded despite errors
+              if grep -q "UPLOAD SUCCEEDED" upload_log.txt || grep -q "No errors uploading" upload_log.txt; then
+                echo "✅ Upload succeeded!"
+                exit 0
+              fi
+            fi
+            
+            # Check if it's a transient error (500 errors)
+            if grep -q "status code 500" upload_log.txt || grep -q "internal server error" upload_log.txt; then
+              echo "⚠️  Transient Apple API error detected, retrying..."
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              sleep 30
+            else
+              # For other errors, fail immediately
+              echo "❌ Upload failed with non-transient error"
+              cat upload_log.txt
+              exit 1
+            fi
+          done
+          
+          echo "❌ Failed after $MAX_RETRIES attempts"
+          exit 1
     artifacts:
       - example/android/app/build/outputs/**/*.apk
       - example/android/app/build/outputs/**/*.aab
@@ -72,12 +105,13 @@ workflows:
         notify:
           success: true
           failure: true
-      app_store_connect:
-        auth: integration
-        submit_to_testflight: true
-        beta_groups:
-          - Tester
-        submit_to_app_store: false
+      # app_store_connect publishing is handled in the custom upload script above
+      # app_store_connect:
+      #   auth: integration
+      #   submit_to_testflight: true
+      #   beta_groups:
+      #     - Tester
+      #   submit_to_app_store: false
 
   package-publish:
     name: Build and Publish Package
