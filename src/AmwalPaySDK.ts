@@ -5,21 +5,17 @@ import {
   type AmwalPayConfig,
 } from './index';
 import NetworkClient from './network/NetworkClient';
-import Logger from './utils/Logger';
 import { type EventSubscription } from 'react-native';
 
 class AmwalPaySDK {
   private static instance: AmwalPaySDK;
-  private logger: Logger;
 
   private onResponseSubscription: EventSubscription | null = null;
 
   private onCustomerIdSubscription: EventSubscription | null = null;
 
   private constructor() {
-    // Initialize the logger
-    this.logger = Logger.getInstance();
-    this.logger.info('AmwalPaySDK', 'SDK instance created');
+    // Initialize the event emitter
   }
 
   static getInstance(): AmwalPaySDK {
@@ -30,32 +26,6 @@ class AmwalPaySDK {
   }
 
   /**
-   * Enable or disable debug logging
-   */
-  setDebugEnabled(enabled: boolean): void {
-    this.logger.setDebugEnabled(enabled);
-    this.logger.info(
-      'AmwalPaySDK',
-      `Debug logging ${enabled ? 'enabled' : 'disabled'}`
-    );
-  }
-
-  /**
-   * Get SDK logs for debugging purposes
-   */
-  getLogs(): string {
-    return this.logger.exportLogs();
-  }
-
-  /**
-   * Clear all SDK logs
-   */
-  clearLogs(): void {
-    this.logger.clearLogs();
-    this.logger.info('AmwalPaySDK', 'Logs cleared');
-  }
-
-  /**
    * Initiates the payment process by first fetching a session token and then starting the payment flow
    * @param config The payment configuration
    */
@@ -63,12 +33,6 @@ class AmwalPaySDK {
     config: Omit<AmwalPayConfig, 'sessionToken'>
   ): Promise<void> {
     try {
-      this.logger.info('AmwalPaySDK', 'Starting payment process', {
-        merchantId: config.merchantId,
-        customerId: config.customerId,
-        environment: config.environment,
-      });
-
       // Set up event listeners before starting the payment process
       this.setupEventListeners(config);
 
@@ -76,11 +40,10 @@ class AmwalPaySDK {
       const networkClient = NetworkClient.getInstance();
 
       // Fetch session token
-      this.logger.debug('AmwalPaySDK', 'Fetching session token', {
-        environment: config.environment,
-        merchantId: config.merchantId,
-      });
-
+      console.log(
+        'Fetching session token for environment:',
+        config.environment
+      );
       const sessionToken = await networkClient.fetchSessionToken(
         config.environment,
         config.merchantId,
@@ -88,12 +51,12 @@ class AmwalPaySDK {
         config.secureHash
       );
 
+      console.log('Session token result:', sessionToken ? 'Success' : 'Failed');
+
       if (!sessionToken) {
-        this.logger.error('AmwalPaySDK', 'Failed to fetch session token');
+        // If session token is null, the error has already been shown by NetworkClient
         return;
       }
-
-      this.logger.info('AmwalPaySDK', 'Session token fetched successfully');
 
       // Create complete config with session token
       const completeConfig: AmwalPayConfig = {
@@ -102,21 +65,17 @@ class AmwalPaySDK {
       };
 
       // Initiate the payment process
-      this.logger.debug(
-        'AmwalPaySDK',
-        'Initiating native payment',
-        completeConfig
+      console.log(
+        'Initiating native payment with config:',
+        JSON.stringify(completeConfig)
       );
       initiate(completeConfig);
-
-      this.logger.info('AmwalPaySDK', 'Payment process initiated successfully');
     } catch (error) {
-      this.logger.error('AmwalPaySDK', 'Error starting payment', error);
+      console.error('Error starting payment:', error);
     }
   }
 
   dispose(): void {
-    this.logger.info('AmwalPaySDK', 'Disposing SDK instance');
     // Remove all event listeners
     this.removeEventListeners();
   }
@@ -131,46 +90,43 @@ class AmwalPaySDK {
     // Remove any existing listeners
     this.removeEventListeners();
 
-    this.logger.debug('AmwalPaySDK', 'Setting up event listeners', {
-      hasOnResponse: typeof config.onResponse === 'function',
-      hasOnCustomerId: typeof config.onCustomerId === 'function',
-    });
+    console.log('🟢 Setting up event listeners...');
+    console.log(
+      '🟢 onResponse callback exists?',
+      typeof config.onResponse === 'function'
+    );
+    console.log(
+      '🟢 onCustomerId callback exists?',
+      typeof config.onCustomerId === 'function'
+    );
 
     this.onResponseSubscription = onResponse((response) => {
-      this.logger.info('AmwalPaySDK', 'Received payment response', response);
+      console.log('🟢 SDK onResponse listener triggered with:', response);
+      console.log('Received AmwalPayResponse:', response);
       if (config.onResponse) {
         config.onResponse(response);
       } else {
-        this.logger.error(
-          'AmwalPaySDK',
-          'onResponse callback is not a function'
-        );
+        console.error('❌ config.onResponse is not a function!');
       }
     });
 
     this.onCustomerIdSubscription = onCustomerId((customerId) => {
-      this.logger.info('AmwalPaySDK', 'Received customer ID', { customerId });
+      console.log('🟢 SDK onCustomerId listener triggered with:', customerId);
+      console.log('Received customerId:', customerId);
       if (config.onCustomerId) {
         config.onCustomerId(customerId);
       } else {
-        this.logger.error(
-          'AmwalPaySDK',
-          'onCustomerId callback is not a function'
-        );
+        console.error('❌ config.onCustomerId is not a function!');
       }
     });
 
-    this.logger.debug('AmwalPaySDK', 'Event listeners setup completed');
+    console.log('🟢 Event listeners set up complete');
   }
 
   /**
    * Removes all event listeners
    */
   private removeEventListeners(): void {
-    if (this.onResponseSubscription || this.onCustomerIdSubscription) {
-      this.logger.debug('AmwalPaySDK', 'Removing event listeners');
-    }
-
     this.onResponseSubscription?.remove();
     this.onCustomerIdSubscription?.remove();
     this.onResponseSubscription = null;

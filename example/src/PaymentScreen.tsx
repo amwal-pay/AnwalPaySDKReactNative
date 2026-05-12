@@ -16,11 +16,8 @@ import {
   Environment,
   Currency,
   TransactionType,
-  Logger,
   type AmwalPayConfig,
 } from 'react-amwal-pay';
-import LogsViewer from './LogsViewer';
-import { LogsManager, LogType } from './LogsManager';
 
 interface ModalPickerProps {
   visible: boolean;
@@ -385,7 +382,6 @@ const ModalPicker: React.FC<ModalPickerProps> = ({
 
 export const PaymentScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState<string | null>(null);
-  const [showLogsViewer, setShowLogsViewer] = useState(false);
 
   // Debug enum values
   React.useEffect(() => {
@@ -399,13 +395,6 @@ export const PaymentScreen: React.FC = () => {
     console.log('TransactionType.NFC:', TransactionType.NFC);
     console.log('TransactionType.CARD_WALLET:', TransactionType.CARD_WALLET);
     console.log('TransactionType.APPLE_PAY:', TransactionType.APPLE_PAY);
-
-    LogsManager.addLog('PaymentScreen initialized', LogType.INFO);
-
-    // Initialize SDK Logger
-    const logger = Logger.getInstance();
-    logger.setDebugEnabled(true);
-    logger.info('PaymentScreen', 'Component initialized with enhanced logging');
   }, []);
 
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
@@ -428,23 +417,15 @@ export const PaymentScreen: React.FC = () => {
   });
 
   // Define callbacks separately to avoid stale closure issues
-  const handleCustomerId = React.useCallback((receivedCustomerId: string) => {
-    setCustomerId(receivedCustomerId);
-    console.log('Customer ID received:', receivedCustomerId);
-    LogsManager.addLog(
-      `Customer ID received: ${receivedCustomerId}`,
-      LogType.CUSTOMER_ID
-    );
+  const handleCustomerId = React.useCallback((customerIdValue: string) => {
+    setCustomerId(customerIdValue);
+    console.log('Customer ID received:', customerIdValue);
   }, []);
 
   const handleResponse = React.useCallback((response: any) => {
     // Handle both Android (wrapped in "data") and iOS (direct) response formats
     const actualResponse = response?.data ? response.data : response;
     console.log('Payment Response received:', actualResponse);
-    LogsManager.addLog(
-      `Payment Response: ${JSON.stringify(actualResponse)}`,
-      LogType.RESPONSE
-    );
   }, []);
   const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
@@ -458,22 +439,10 @@ export const PaymentScreen: React.FC = () => {
 
   const handleInitializePayment = async () => {
     try {
-      LogsManager.addLog('Starting payment initialization', LogType.INFO);
-
       if (!isConfigValid()) {
         Alert.alert('Error', 'Please fill in all required fields');
-        LogsManager.addLog(
-          'Payment initialization failed: Invalid configuration',
-          LogType.ERROR
-        );
         return;
       }
-
-      LogsManager.addLog(
-        `Initializing payment with merchant: ${config.merchantId}`,
-        LogType.INFO
-      );
-
       const paymentConfig = {
         ...config,
         customerId,
@@ -482,12 +451,9 @@ export const PaymentScreen: React.FC = () => {
       };
       const amwalPay = AmwalPaySDK.getInstance();
       await amwalPay.startPayment(paymentConfig as AmwalPayConfig);
-
-      LogsManager.addLog('Payment SDK started successfully', LogType.INFO);
     } catch (e) {
       Alert.alert('Error', 'Error starting payment');
       console.log(e);
-      LogsManager.addLog(`Payment initialization error: ${e}`, LogType.ERROR);
     }
   };
 
@@ -508,28 +474,7 @@ export const PaymentScreen: React.FC = () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.appBar}>
         <Text style={styles.appBarTitle}>Payment Configuration</Text>
-        <View style={styles.appBarButtons}>
-          <TouchableOpacity
-            style={styles.appBarButton}
-            onPress={() => setShowLogsViewer(true)}
-            accessibilityLabel="View SDK Logs"
-          >
-            <Text style={{ fontSize: 20, color: '#007AFF' }}>🐛</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.appBarButton}
-            onPress={() => {
-              const logger = Logger.getInstance();
-              const sdkLogs = logger.exportLogs();
-              console.log('SDK Logs:', sdkLogs);
-              Alert.alert('SDK Logs', 'Check console for detailed logs');
-            }}
-            accessibilityLabel="Export SDK Logs"
-          >
-            <Text style={{ fontSize: 20, color: '#28a745' }}>📋</Text>
-          </TouchableOpacity>
-          <ClearCustomerIdButton onPress={() => setCustomerId(null)} />
-        </View>
+        <ClearCustomerIdButton onPress={() => setCustomerId(null)} />
       </View>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <Text style={styles.label}>Environment</Text>
@@ -790,11 +735,6 @@ export const PaymentScreen: React.FC = () => {
           <Text style={styles.buttonText}>Start Payment</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <LogsViewer
-        visible={showLogsViewer}
-        onClose={() => setShowLogsViewer(false)}
-      />
     </SafeAreaView>
   );
 };
@@ -815,14 +755,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  appBarButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   appBarButton: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    marginLeft: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 6,
   },
   appBarButtonText: {
     color: '#fff',
@@ -1001,7 +938,6 @@ const ClearCustomerIdButton = ({ onPress }: { onPress?: () => void }) => (
     style={styles.appBarButton}
     onPress={async () => {
       Alert.alert('Customer ID cleared');
-      LogsManager.addLog('Customer ID cleared', LogType.INFO);
       if (onPress) onPress();
     }}
     accessibilityLabel="Clear Customer ID"
