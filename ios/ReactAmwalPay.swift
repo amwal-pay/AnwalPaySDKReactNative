@@ -258,7 +258,8 @@ open class ReactAmwalPay: RCTEventEmitter {
             transactionType: mapTransactionType(transactionType: config["transactionType"] as? String ?? "CARD_WALLET"),
             transactionId: config["transactionId"] as? String ?? Config.generateTransactionId(),
             additionValues: additionValues,
-            merchantReference: config["merchantReference"] as? String
+            merchantReference: config["merchantReference"] as? String,
+            secureHash: config["secureHash"] as? String
         )
     }
     
@@ -284,29 +285,31 @@ open class ReactAmwalPay: RCTEventEmitter {
                    config: sdkConfig,
                    onResponse: { [weak self] response in
                        print("🟠 SDK onResponse callback fired!")
-                       print("🟠 Response type: \(type(of: response))")
                        print("🟠 Response value: \(response ?? "nil")")
 
-                       // Dismiss SDK window when payment completes
+                       // Always dismiss SDK window when this callback fires
                        DispatchQueue.main.async {
                            self?.dismissSDKWindow()
                        }
 
+                       // nil response means SDK was dismissed without completing a payment
+                       // (e.g., error during initialization). Don't emit to React Native.
+                       guard let response = response else {
+                           print("🟠 nil response - SDK dismissed without payment, not emitting to JS")
+                           return
+                       }
+
                        // The SDK returns a JSON string, we need to parse it
-                       if let responseString = response as? String,
-                          let data = responseString.data(using: .utf8),
+                       if let data = response.data(using: .utf8),
                           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
                            print("🟠 Successfully parsed JSON string to dictionary")
                            self?.emitOnResponse(json)
-                       } else if let responseDict = response as? [String: Any] {
-                           print("🟠 Response is already a dictionary")
-                           self?.emitOnResponse(responseDict)
                        } else {
-                           print("🟠 Could not parse response, sending as-is")
+                           print("🟠 Could not parse response as JSON, sending error")
                            let errorData: [String: Any] = [
                                "status": "error",
                                "message": "Invalid response format",
-                               "rawResponse": String(describing: response)
+                               "rawResponse": response
                            ]
                            self?.emitOnResponse(errorData)
                        }
