@@ -19,6 +19,8 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
+  pod 'amwalsdk', :path => '../../../amwal_pay_sdk/AnwalPaySDKNativeiOSExample/amwalsdk', :subspecs => ['Release']
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
@@ -40,25 +42,6 @@ target 'ReactAmwalPayExample' do
       target.build_configurations.each do |config|
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
-      end
-    end
-    
-    # Fix fmt compilation issues with Xcode 26.4+
-    # Xcode 26.4 enforces stricter C++20 consteval requirements that break fmt.
-    # Compile fmt with C++17 to avoid consteval issues while keeping other pods on C++20.
-    # See: https://github.com/facebook/react-native/issues/55601
-    if target.name == 'fmt'
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
-      end
-    end
-    
-    # Apply similar fixes to other C++ targets that might have issues
-    ['RCT-Folly', 'glog', 'boost'].each do |cpp_target|
-      if target.name == cpp_target
-        target.build_configurations.each do |config|
-          config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
-        end
       end
     end
   end

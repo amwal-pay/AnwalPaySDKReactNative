@@ -14,10 +14,11 @@ Pod::Spec.new do |s|
   s.source       = { :git => "https://github.com/amwal-pay/AnwalPaySDKReactNative.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,swift}"
+  s.exclude_files = "ios/build/**"
   s.private_header_files = "ios/**/*.h"
 
   # Default to Release subspec
   amwal_subspec = ENV['AMWAL_SUBSPEC'] || 'Release'
-  s.dependency "amwalsdk/#{amwal_subspec}"
+  s.dependency "amwalsdk/#{amwal_subspec}", '>= 1.1.94'
   install_modules_dependencies(s)
 end

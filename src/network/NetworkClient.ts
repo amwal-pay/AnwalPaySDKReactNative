@@ -1,11 +1,15 @@
 import { Alert } from 'react-native';
 import { Environment } from '../NativeReactAmwalPay';
 import SecureHashUtil from '../utils/SecureHashUtil';
+import Logger from '../utils/Logger';
 
 class NetworkClient {
   private static instance: NetworkClient;
+  private logger: Logger;
 
-  private constructor() {}
+  private constructor() {
+    this.logger = Logger.getInstance();
+  }
 
   static getInstance(): NetworkClient {
     if (!NetworkClient.instance) {
@@ -15,16 +19,19 @@ class NetworkClient {
   }
 
   private getWebhookUrl(env: Environment): string {
-    switch (env) {
-      case Environment.SIT:
-        return 'https://test.amwalpg.com:24443/';
-      case Environment.UAT:
-        return 'https://test.amwalpg.com:14443/';
-      case Environment.PROD:
-        return 'https://webhook.amwalpg.com/';
-      default:
-        return 'https://test.amwalpg.com:24443/';
-    }
+    const urls = {
+      [Environment.SIT]: 'https://test.amwalpg.com:24443/',
+      [Environment.UAT]: 'https://test.amwalpg.com:14443/',
+      [Environment.PROD]: 'https://webhook.amwalpg.com/',
+    };
+
+    const url = urls[env] || urls[Environment.SIT];
+    this.logger.debug(
+      'NetworkClient',
+      `Using webhook URL for ${Environment[env]}`,
+      { url }
+    );
+    return url;
   }
 
   async fetchSessionToken(
@@ -34,6 +41,12 @@ class NetworkClient {
     secureHashValue: string
   ): Promise<string | null> {
     try {
+      this.logger.info('NetworkClient', 'Fetching session token', {
+        environment: Environment[env],
+        merchantId,
+        hasCustomerId: !!customerId,
+      });
+
       const webhookUrl = this.getWebhookUrl(env);
 
       const dataMap = {
@@ -45,6 +58,11 @@ class NetworkClient {
         secureHashValue,
         dataMap
       );
+
+      this.logger.debug('NetworkClient', 'Making API request', {
+        url: `${webhookUrl}Membership/GetSDKSessionToken`,
+        method: 'POST',
+      });
 
       const response = await fetch(
         `${webhookUrl}Membership/GetSDKSessionToken`,
@@ -65,21 +83,35 @@ class NetworkClient {
 
       const responseData = await response.json();
 
+      this.logger.debug('NetworkClient', 'API response received', {
+        status: response.status,
+        ok: response.ok,
+        success: responseData.success,
+      });
+
       if (response.ok && responseData.success) {
+        this.logger.info('NetworkClient', 'Session token fetched successfully');
         return responseData.data.sessionToken;
       } else {
         const errorMessage =
           responseData.errorList?.join(',') || 'Unknown error';
+        this.logger.error('NetworkClient', 'API request failed', {
+          status: response.status,
+          errorMessage,
+          responseData,
+        });
         this.showErrorDialog(errorMessage);
         return null;
       }
     } catch (error) {
+      this.logger.error('NetworkClient', 'Network request failed', error);
       this.showErrorDialog('Something Went Wrong');
       return null;
     }
   }
 
   private showErrorDialog(message: string): void {
+    this.logger.warn('NetworkClient', 'Showing error dialog', { message });
     Alert.alert('Error', message, [{ text: 'OK' }]);
   }
 }
