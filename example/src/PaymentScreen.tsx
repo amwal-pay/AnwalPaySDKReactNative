@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Modal,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import {
   AmwalPaySDK,
@@ -84,127 +85,125 @@ const COLOR_SWATCHES = [
   '#000000',
 ];
 
-const ColorPicker: React.FC<ColorPickerProps> = ({
-  visible,
-  selectedColor,
-  onColorChange,
-  onClose,
-  title,
-}) => {
-  const [customHex, setCustomHex] = useState(selectedColor || '#1E88E5');
+const ColorPicker: React.FC<ColorPickerProps> = React.memo(
+  ({ visible, selectedColor, onColorChange, onClose, title }) => {
+    const [customHex, setCustomHex] = useState(selectedColor || '#1E88E5');
 
-  React.useEffect(() => {
-    if (selectedColor) {
-      setCustomHex(selectedColor);
-    }
-  }, [selectedColor]);
+    React.useEffect(() => {
+      if (selectedColor) {
+        setCustomHex(selectedColor);
+      }
+    }, [selectedColor]);
 
-  const isValidHex = (hex: string): boolean => {
-    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
-  };
+    const isValidHex = (hex: string): boolean => {
+      return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex);
+    };
 
-  const handleCustomHexChange = (text: string) => {
-    // Auto-add # if not present
-    let formatted = text;
-    if (text.length > 0 && !text.startsWith('#')) {
-      formatted = '#' + text;
-    }
-    setCustomHex(formatted.toUpperCase());
-  };
+    const handleCustomHexChange = (text: string) => {
+      // Auto-add # if not present
+      let formatted = text;
+      if (text.length > 0 && !text.startsWith('#')) {
+        formatted = '#' + text;
+      }
+      setCustomHex(formatted.toUpperCase());
+    };
 
-  const handleApplyCustomColor = () => {
-    if (isValidHex(customHex)) {
-      onColorChange(customHex);
-      onClose();
-    }
-  };
+    const handleApplyCustomColor = () => {
+      if (isValidHex(customHex)) {
+        onColorChange(customHex);
+        onClose();
+      }
+    };
 
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={colorPickerStyles.modalOverlay}>
-        <View style={colorPickerStyles.modalContent}>
-          <View style={colorPickerStyles.modalHeader}>
-            <Text style={colorPickerStyles.modalTitle}>{title}</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              style={colorPickerStyles.modalCloseButton}
-            >
-              <Text style={colorPickerStyles.modalCloseButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Color Preview */}
-          <View style={colorPickerStyles.previewContainer}>
-            <View
-              style={[
-                colorPickerStyles.colorPreview,
-                {
-                  backgroundColor: isValidHex(customHex)
-                    ? customHex
-                    : '#CCCCCC',
-                },
-              ]}
-            />
-            <Text style={colorPickerStyles.previewText}>
-              {isValidHex(customHex) ? customHex : 'Invalid color'}
-            </Text>
-          </View>
-
-          {/* Custom Hex Input */}
-          <View style={colorPickerStyles.customInputContainer}>
-            <TextInput
-              style={colorPickerStyles.hexInput}
-              value={customHex}
-              onChangeText={handleCustomHexChange}
-              placeholder="#FFFFFF"
-              maxLength={7}
-              autoCapitalize="characters"
-            />
-            <TouchableOpacity
-              style={[
-                colorPickerStyles.applyButton,
-                !isValidHex(customHex) && colorPickerStyles.applyButtonDisabled,
-              ]}
-              onPress={handleApplyCustomColor}
-              disabled={!isValidHex(customHex)}
-            >
-              <Text style={colorPickerStyles.applyButtonText}>Apply</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Color Swatches */}
-          <ScrollView style={colorPickerStyles.swatchesContainer}>
-            <View style={colorPickerStyles.swatchesGrid}>
-              {COLOR_SWATCHES.map((color, index) => (
-                <TouchableOpacity
-                  key={`${color}-${index}`}
-                  style={[
-                    colorPickerStyles.colorSwatch,
-                    { backgroundColor: color },
-                    selectedColor === color && colorPickerStyles.selectedSwatch,
-                  ]}
-                  onPress={() => {
-                    onColorChange(color);
-                    onClose();
-                  }}
-                >
-                  {selectedColor === color && (
-                    <Text style={colorPickerStyles.checkMark}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={colorPickerStyles.modalOverlay}>
+          <View style={colorPickerStyles.modalContent}>
+            <View style={colorPickerStyles.modalHeader}>
+              <Text style={colorPickerStyles.modalTitle}>{title}</Text>
+              <TouchableOpacity
+                onPress={onClose}
+                style={colorPickerStyles.modalCloseButton}
+              >
+                <Text style={colorPickerStyles.modalCloseButtonText}>Done</Text>
+              </TouchableOpacity>
             </View>
-          </ScrollView>
+
+            {/* Color Preview */}
+            <View style={colorPickerStyles.previewContainer}>
+              <View
+                style={[
+                  colorPickerStyles.colorPreview,
+                  {
+                    backgroundColor: isValidHex(customHex)
+                      ? customHex
+                      : '#CCCCCC',
+                  },
+                ]}
+              />
+              <Text style={colorPickerStyles.previewText}>
+                {isValidHex(customHex) ? customHex : 'Invalid color'}
+              </Text>
+            </View>
+
+            {/* Custom Hex Input */}
+            <View style={colorPickerStyles.customInputContainer}>
+              <TextInput
+                style={colorPickerStyles.hexInput}
+                value={customHex}
+                onChangeText={handleCustomHexChange}
+                placeholder="#FFFFFF"
+                maxLength={7}
+                autoCapitalize="characters"
+              />
+              <TouchableOpacity
+                style={[
+                  colorPickerStyles.applyButton,
+                  !isValidHex(customHex) &&
+                    colorPickerStyles.applyButtonDisabled,
+                ]}
+                onPress={handleApplyCustomColor}
+                disabled={!isValidHex(customHex)}
+              >
+                <Text style={colorPickerStyles.applyButtonText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Color Swatches */}
+            <ScrollView style={colorPickerStyles.swatchesContainer}>
+              <View style={colorPickerStyles.swatchesGrid}>
+                {COLOR_SWATCHES.map((color, index) => (
+                  <TouchableOpacity
+                    key={`${color}-${index}`}
+                    style={[
+                      colorPickerStyles.colorSwatch,
+                      { backgroundColor: color },
+                      selectedColor === color &&
+                        colorPickerStyles.selectedSwatch,
+                    ]}
+                    onPress={() => {
+                      onColorChange(color);
+                      onClose();
+                    }}
+                  >
+                    {selectedColor === color && (
+                      <Text style={colorPickerStyles.checkMark}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
-};
+      </Modal>
+    );
+  }
+);
 
 const colorPickerStyles = StyleSheet.create({
   modalOverlay: {
@@ -323,89 +322,94 @@ const colorPickerStyles = StyleSheet.create({
   },
 });
 
-const ModalPicker: React.FC<ModalPickerProps> = ({
-  visible,
-  selectedValue,
-  onValueChange,
-  onClose,
-  items,
-  title,
-}) => {
-  console.log('ModalPicker rendered with items:', items);
-  console.log('Items length:', items.length);
-
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{title}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.modalCloseButton}>
-              <Text style={styles.modalCloseButtonText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalList}>
-            {items.map((item) => (
+const ModalPicker: React.FC<ModalPickerProps> = React.memo(
+  ({ visible, selectedValue, onValueChange, onClose, items, title }) => {
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{title}</Text>
               <TouchableOpacity
-                key={item.value}
-                style={[
-                  styles.modalListItem,
-                  selectedValue === item.value && styles.modalListItemSelected,
-                ]}
-                onPress={() => {
-                  onValueChange(item.value);
-                  onClose();
-                }}
+                onPress={onClose}
+                style={styles.modalCloseButton}
               >
-                <Text
-                  style={[
-                    styles.modalListItemText,
-                    selectedValue === item.value &&
-                      styles.modalListItemTextSelected,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-                {selectedValue === item.value && (
-                  <Text style={styles.modalListItemCheck}>✓</Text>
-                )}
+                <Text style={styles.modalCloseButtonText}>Done</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            </View>
+            <ScrollView style={styles.modalList}>
+              {items.map((item) => (
+                <TouchableOpacity
+                  key={item.value}
+                  style={[
+                    styles.modalListItem,
+                    selectedValue === item.value &&
+                      styles.modalListItemSelected,
+                  ]}
+                  onPress={() => {
+                    onValueChange(item.value);
+                    onClose();
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalListItemText,
+                      selectedValue === item.value &&
+                        styles.modalListItemTextSelected,
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                  {selectedValue === item.value && (
+                    <Text style={styles.modalListItemCheck}>✓</Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
-};
+      </Modal>
+    );
+  }
+);
+
+const ENVIRONMENT_ITEMS = [
+  { label: 'SIT', value: 'SIT' },
+  { label: 'UAT', value: 'UAT' },
+  { label: 'PROD', value: 'PROD' },
+];
+
+const CURRENCY_ITEMS = [{ label: 'OMR', value: 'OMR' }];
+
+const TRANSACTION_TYPE_ITEMS = [
+  { label: 'NFC', value: 'NFC' },
+  { label: 'CARD_WALLET', value: 'CARD_WALLET' },
+  { label: 'APPLE_PAY', value: 'APPLE_PAY' },
+];
+
+const IGNORE_RECEIPT_ITEMS = [
+  { label: 'No', value: 'false' },
+  { label: 'Yes', value: 'true' },
+];
+
+const BOTTOM_SHEET_ITEMS = [
+  { label: 'No', value: 'false' },
+  { label: 'Yes', value: 'true' },
+];
 
 export const PaymentScreen: React.FC = () => {
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [showLogsViewer, setShowLogsViewer] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Debug enum values
   React.useEffect(() => {
-    console.log('Environment enum:', Environment);
-    console.log('Environment.SIT:', Environment.SIT);
-    console.log('Environment.UAT:', Environment.UAT);
-    console.log('Environment.PROD:', Environment.PROD);
-    console.log('Currency enum:', Currency);
-    console.log('Currency.OMR:', Currency.OMR);
-    console.log('TransactionType enum:', TransactionType);
-    console.log('TransactionType.NFC:', TransactionType.NFC);
-    console.log('TransactionType.CARD_WALLET:', TransactionType.CARD_WALLET);
-    console.log('TransactionType.APPLE_PAY:', TransactionType.APPLE_PAY);
-
     LogsManager.addLog('PaymentScreen initialized', LogType.INFO);
-
-    // Initialize SDK Logger
-    const logger = Logger.getInstance();
-    logger.setDebugEnabled(true);
-    logger.info('PaymentScreen', 'Component initialized with enhanced logging');
+    Logger.getInstance().setDebugEnabled(true);
   }, []);
 
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
@@ -457,22 +461,14 @@ export const PaymentScreen: React.FC = () => {
     useState(false);
 
   const handleInitializePayment = async () => {
+    if (!isConfigValid()) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    setIsLoading(true);
     try {
       LogsManager.addLog('Starting payment initialization', LogType.INFO);
-
-      if (!isConfigValid()) {
-        Alert.alert('Error', 'Please fill in all required fields');
-        LogsManager.addLog(
-          'Payment initialization failed: Invalid configuration',
-          LogType.ERROR
-        );
-        return;
-      }
-
-      LogsManager.addLog(
-        `Initializing payment with merchant: ${config.merchantId}`,
-        LogType.INFO
-      );
 
       const paymentConfig = {
         ...config,
@@ -486,8 +482,9 @@ export const PaymentScreen: React.FC = () => {
       LogsManager.addLog('Payment SDK started successfully', LogType.INFO);
     } catch (e) {
       Alert.alert('Error', 'Error starting payment');
-      console.log(e);
       LogsManager.addLog(`Payment initialization error: ${e}`, LogType.ERROR);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -550,11 +547,7 @@ export const PaymentScreen: React.FC = () => {
             setShowEnvironmentPicker(false);
           }}
           onClose={() => setShowEnvironmentPicker(false)}
-          items={[
-            { label: 'SIT', value: 'SIT' },
-            { label: 'UAT', value: 'UAT' },
-            { label: 'PROD', value: 'PROD' },
-          ]}
+          items={ENVIRONMENT_ITEMS}
           title="Select Environment"
         />
 
@@ -584,7 +577,7 @@ export const PaymentScreen: React.FC = () => {
             setShowCurrencyPicker(false);
           }}
           onClose={() => setShowCurrencyPicker(false)}
-          items={[{ label: 'OMR', value: 'OMR' }]}
+          items={CURRENCY_ITEMS}
           title="Select Currency"
         />
         <Text style={styles.label}>Amount</Text>
@@ -643,11 +636,7 @@ export const PaymentScreen: React.FC = () => {
             setShowTransactionTypePicker(false);
           }}
           onClose={() => setShowTransactionTypePicker(false)}
-          items={[
-            { label: 'NFC', value: 'NFC' },
-            { label: 'CARD_WALLET', value: 'CARD_WALLET' },
-            { label: 'APPLE_PAY', value: 'APPLE_PAY' },
-          ]}
+          items={TRANSACTION_TYPE_ITEMS}
           title="Select Transaction Type"
         />
 
@@ -745,10 +734,7 @@ export const PaymentScreen: React.FC = () => {
             setShowIgnoreReceiptPicker(false);
           }}
           onClose={() => setShowIgnoreReceiptPicker(false)}
-          items={[
-            { label: 'No ', value: 'false' },
-            { label: 'Yes', value: 'true' },
-          ]}
+          items={IGNORE_RECEIPT_ITEMS}
           title="Ignore Receipt Screen"
         />
         <Text style={styles.label}>Use Bottom Sheet Design</Text>
@@ -777,17 +763,19 @@ export const PaymentScreen: React.FC = () => {
             setShowBottomSheetPicker(false);
           }}
           onClose={() => setShowBottomSheetPicker(false)}
-          items={[
-            { label: 'No', value: 'false' },
-            { label: 'Yes', value: 'true' },
-          ]}
+          items={BOTTOM_SHEET_ITEMS}
           title="Use Bottom Sheet Design"
         />
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleInitializePayment}
+          disabled={isLoading}
         >
-          <Text style={styles.buttonText}>Start Payment</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Start Payment</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 
@@ -859,6 +847,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 24,
     marginBottom: 32,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     color: '#fff',

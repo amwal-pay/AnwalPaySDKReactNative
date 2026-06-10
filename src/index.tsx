@@ -8,7 +8,6 @@ import ReactAmwalPay, {
 } from './NativeReactAmwalPay';
 import AmwalPaySDK from './AmwalPaySDK';
 import { UuidUtil } from './utils/UuidUtil';
-import Logger, { LogLevel, type LogEntry } from './utils/Logger';
 import { NativeEventEmitter, type EventSubscription } from 'react-native';
 
 // Create an event emitter for the native module
@@ -64,7 +63,4 @@ export {
   type AmwalPayConfig,
   AmwalPaySDK,
   UuidUtil,
-  Logger,
-  LogLevel,
-  type LogEntry,
 };
