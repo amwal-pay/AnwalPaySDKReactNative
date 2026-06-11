@@ -28,7 +28,7 @@ extension UIViewController {
 @objc(ReactAmwalPay)
 open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
-    private weak var presentingVC: UIViewController?
+    private var sdkWindow: UIWindow?
 
     open override func supportedEvents() -> [String]! {
         return ["onResponse", "onCustomerId"]
@@ -88,29 +88,39 @@ open class ReactAmwalPay: RCTEventEmitter {
     open func initiate(_ config: [String: Any]) {
         DispatchQueue.main.async {
             do {
+                if self.sdkWindow != nil {
+                    AmwalLog.warn("SDK already visible — ignoring duplicate call", tag: "SDK")
+                    return
+                }
+
                 let sdkConfig = self.buildConfig(config)
                 AmwalLog.info("Building SDK config — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
 
-                guard let rootVC = UIViewController.getTopMostViewController() else {
-                    AmwalLog.error("No root VC found", tag: "SDK")
-                    self.emitOnResponse(["status": "ERROR", "message": "No root view controller"])
+                guard let windowScene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive })
+                    ?? UIApplication.shared.connectedScenes
+                        .compactMap({ $0 as? UIWindowScene })
+                        .first else {
+                    AmwalLog.error("No active UIWindowScene", tag: "SDK")
+                    self.emitOnResponse(["status": "ERROR", "message": "No active window scene"])
                     return
                 }
-                AmwalLog.info("Presenting from: \(type(of: rootVC))", tag: "SDK")
 
                 let sdk = AmwalSDK()
                 let sdkVC = try sdk.createViewController(
                     config: sdkConfig,
                     onResponse: { [weak self] response in
-                        AmwalLog.info("onResponse received", tag: "SDK")
+                        AmwalLog.info("onResponse raw: \(response ?? "nil")", tag: "SDK")
                         DispatchQueue.main.async {
-                            self?.presentingVC?.dismiss(animated: true)
-                            self?.presentingVC = nil
+                            self?.sdkWindow?.isHidden = true
+                            self?.sdkWindow = nil
                         }
                         guard let response = response,
                               let data = response.data(using: .utf8),
                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
                         else { return }
+                        AmwalLog.info("onResponse json: \(json)", tag: "SDK")
                         self?.emitOnResponse(json)
                     },
                     onCustomerId: { [weak self] customerId in
@@ -118,13 +128,17 @@ open class ReactAmwalPay: RCTEventEmitter {
                     }
                 )
 
-                sdkVC.modalPresentationStyle = .overFullScreen
-                self.presentingVC = sdkVC
-                rootVC.present(sdkVC, animated: true) {
-                    AmwalLog.info("SDK presented", tag: "SDK")
-                }
+                let window = UIWindow(windowScene: windowScene)
+                window.windowLevel = UIWindow.Level.alert + 1
+                window.backgroundColor = .white
+                window.rootViewController = sdkVC
+                window.makeKeyAndVisible()
+                self.sdkWindow = window
+                AmwalLog.info("SDK window visible (level \(window.windowLevel.rawValue))", tag: "SDK")
             } catch {
                 AmwalLog.error("initiate failed: \(error)", tag: "SDK")
+                self.sdkWindow?.isHidden = true
+                self.sdkWindow = nil
                 self.emitOnResponse(["status": "ERROR", "message": error.localizedDescription])
             }
         }

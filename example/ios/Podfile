@@ -19,7 +19,7 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
-  pod 'amwalsdk', :podspec => './amwalsdk.podspec', :subspecs => ['Release']
+  pod 'amwalsdk', :podspec => './amwalsdk.podspec', :subspecs => ['Debug']
 
   use_react_native!(
     :path => config[:reactNativePath],
