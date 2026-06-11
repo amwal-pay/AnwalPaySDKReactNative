@@ -19,7 +19,7 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
-  pod 'amwalsdk', :path => '../../../amwal_pay_sdk/AnwalPaySDKNativeiOSExample/amwalsdk', :subspecs => ['Release']
+  pod 'amwalsdk', :podspec => './amwalsdk.podspec', :subspecs => ['Release']
 
   use_react_native!(
     :path => config[:reactNativePath],
@@ -36,14 +36,33 @@ target 'ReactAmwalPayExample' do
       # :ccache_enabled => true
     )
 
-  # Set "Build Libraries for Distribution" to NO for amwalsdk and exclude x86_64
-  installer.pods_project.targets.each do |target|
-    if target.name == 'amwalsdk'
-      target.build_configurations.each do |config|
-        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
+    # Set "Build Libraries for Distribution" to NO for amwalsdk and exclude x86_64
+    installer.pods_project.targets.each do |target|
+      if target.name == 'amwalsdk'
+        target.build_configurations.each do |config|
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+          config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
+        end
+      end
+    end
+
+    # Patch amwalsdk Config.swift to add secureHash parameter if the installed
+    # version predates its addition. This keeps the podspec pinned to a stable
+    # released version while the native SDK release catches up.
+    config_file = "#{installer.sandbox.root}/amwalsdk/Config.swift"
+    if File.exist?(config_file)
+      content = File.read(config_file)
+      unless content.include?('secureHash')
+        FileUtils.chmod(0644, config_file)
+        content.gsub!('    public var ignoreCVV: Bool',
+                      "    public var ignoreCVV: Bool\n    public var secureHash: String?")
+        content.gsub!('        ignoreCVV: Bool = false',
+                      "        ignoreCVV: Bool = false,\n        secureHash: String? = nil")
+        content.gsub!('        self.ignoreCVV = ignoreCVV',
+                      "        self.ignoreCVV = ignoreCVV\n        self.secureHash = secureHash")
+        File.write(config_file, content)
+        Pod::UI.puts 'amwalsdk: patched Config.swift to add secureHash support'
       end
     end
   end
-end
 end
