@@ -13,12 +13,21 @@ struct AmwalLog {
 
 extension UIViewController {
     static func getTopMostViewController() -> UIViewController? {
-        let keyWindow = UIApplication.shared.connectedScenes
+        // Prefer the foreground-active scene so we always present on the visible screen.
+        let scene = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow }
+            .first(where: { $0.activationState == .foregroundActive })
+            ?? UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first
+
+        let keyWindow = scene?.windows.first(where: { $0.isKeyWindow })
+            ?? scene?.windows.first
+
         var top = keyWindow?.rootViewController
         while let presented = top?.presentedViewController {
+            // Skip view controllers that are being dismissed to avoid presenting on a disappearing VC.
+            if presented.isBeingDismissed { break }
             top = presented
         }
         return top
@@ -30,11 +39,24 @@ open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
     private weak var presentingVC: UIViewController?
 
+    // Pre-warmed SDK instance — created eagerly so the Flutter engine is ready
+    // by the time the user taps "pay", eliminating the cold-start blank screen.
+    private lazy var sdk: AmwalSDK = {
+        AmwalLog.info("Pre-warming AmwalSDK Flutter engine", tag: "SDK")
+        return AmwalSDK()
+    }()
+
     open override func supportedEvents() -> [String]! {
         return ["onResponse", "onCustomerId"]
     }
 
-    open override func startObserving() { hasListeners = true }
+    open override func startObserving() {
+        hasListeners = true
+        // Trigger lazy SDK init as soon as JS adds its first listener so the
+        // Flutter engine is warm before the first payment call.
+        DispatchQueue.main.async { _ = self.sdk }
+    }
+
     open override func stopObserving() { hasListeners = false }
 
     private func emitOnResponse(_ params: [String: Any]) {
@@ -88,6 +110,12 @@ open class ReactAmwalPay: RCTEventEmitter {
     open func initiate(_ config: [String: Any]) {
         DispatchQueue.main.async {
             do {
+                // Guard: don't present a second SDK on top of one that's already visible.
+                if let existing = self.presentingVC, existing.isBeingPresented || existing.presentingViewController != nil {
+                    AmwalLog.warn("SDK already presented — ignoring duplicate initiate call", tag: "SDK")
+                    return
+                }
+
                 let sdkConfig = self.buildConfig(config)
                 AmwalLog.info("Building SDK config — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
 
@@ -96,10 +124,19 @@ open class ReactAmwalPay: RCTEventEmitter {
                     self.emitOnResponse(["status": "ERROR", "message": "No root view controller"])
                     return
                 }
+
+                // Guard: if the presenting VC is mid-transition it can't host a modal.
+                guard !rootVC.isBeingPresented, !rootVC.isBeingDismissed else {
+                    AmwalLog.warn("Root VC is mid-transition — deferring presentation", tag: "SDK")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        self.initiate(config)
+                    }
+                    return
+                }
+
                 AmwalLog.info("Presenting from: \(type(of: rootVC))", tag: "SDK")
 
-                let sdk = AmwalSDK()
-                let sdkVC = try sdk.createViewController(
+                let sdkVC = try self.sdk.createViewController(
                     config: sdkConfig,
                     onResponse: { [weak self] response in
                         AmwalLog.info("onResponse received", tag: "SDK")
@@ -121,7 +158,7 @@ open class ReactAmwalPay: RCTEventEmitter {
                 sdkVC.modalPresentationStyle = .overFullScreen
                 self.presentingVC = sdkVC
                 rootVC.present(sdkVC, animated: true) {
-                    AmwalLog.info("SDK presented", tag: "SDK")
+                    AmwalLog.info("SDK presented over \(type(of: rootVC))", tag: "SDK")
                 }
             } catch {
                 AmwalLog.error("initiate failed: \(error)", tag: "SDK")
