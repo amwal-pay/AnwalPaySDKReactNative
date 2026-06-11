@@ -19,6 +19,6 @@ Pod::Spec.new do |s|
 
   # Default to Release subspec
   amwal_subspec = ENV['AMWAL_SUBSPEC'] || 'Release'
-  s.dependency "amwalsdk/#{amwal_subspec}", '>= 1.1.93'
+  s.dependency "amwalsdk/#{amwal_subspec}", '>= 1.1.94'
   install_modules_dependencies(s)
 end
