@@ -39,12 +39,19 @@ open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
     private weak var presentingVC: UIViewController?
 
-    // Pre-warmed SDK instance — created eagerly so the Flutter engine is ready
-    // by the time the user taps "pay", eliminating the cold-start blank screen.
+    // Pre-warmed SDK instance — initialized once per module lifetime so the
+    // Flutter engine is ready long before the user taps "pay".
     private lazy var sdk: AmwalSDK = {
         AmwalLog.info("Pre-warming AmwalSDK Flutter engine", tag: "SDK")
         return AmwalSDK()
     }()
+
+    override init() {
+        super.init()
+        // Boot the Flutter engine immediately when the native module is instantiated
+        // (at JS bridge startup) rather than waiting for the first addListener call.
+        DispatchQueue.main.async { _ = self.sdk }
+    }
 
     open override func supportedEvents() -> [String]! {
         return ["onResponse", "onCustomerId"]
@@ -52,9 +59,6 @@ open class ReactAmwalPay: RCTEventEmitter {
 
     open override func startObserving() {
         hasListeners = true
-        // Trigger lazy SDK init as soon as JS adds its first listener so the
-        // Flutter engine is warm before the first payment call.
-        DispatchQueue.main.async { _ = self.sdk }
     }
 
     open override func stopObserving() { hasListeners = false }
@@ -156,8 +160,11 @@ open class ReactAmwalPay: RCTEventEmitter {
                 )
 
                 sdkVC.modalPresentationStyle = .overFullScreen
+                // White background prevents a black/transparent flash before Flutter's first frame paints.
+                sdkVC.view.backgroundColor = .white
                 self.presentingVC = sdkVC
-                rootVC.present(sdkVC, animated: true) {
+                // animated: false eliminates the slide-up window during which Flutter hasn't rendered yet.
+                rootVC.present(sdkVC, animated: false) {
                     AmwalLog.info("SDK presented over \(type(of: rootVC))", tag: "SDK")
                 }
             } catch {
