@@ -14,8 +14,6 @@ struct AmwalLog {
 @objc(ReactAmwalPay)
 open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
-    private weak var presentingVC: UIViewController?
-    // Strong ref keeps the window alive while the SDK is visible.
     private var sdkWindow: UIWindow?
 
     // Pre-warmed SDK instance — one Flutter engine per app session.
@@ -66,7 +64,6 @@ open class ReactAmwalPay: RCTEventEmitter {
         if let extra = raw["additionValues"] as? [String: String] {
             extra.forEach { additionValues[$0] = $1 }
         }
-        let secureHash = raw["secureHash"] as? String
         return Config(
             environment: mapEnvironment(raw["environment"] as? String ?? "SIT"),
             sessionToken: raw["sessionToken"] as? String ?? "",
@@ -79,8 +76,7 @@ open class ReactAmwalPay: RCTEventEmitter {
             transactionType: mapTransactionType(raw["transactionType"] as? String ?? "CARD_WALLET"),
             transactionId: raw["transactionId"] as? String ?? Config.generateTransactionId(),
             additionValues: additionValues,
-            merchantReference: raw["merchantReference"] as? String,
-            secureHash: secureHash
+            merchantReference: raw["merchantReference"] as? String
         )
     }
 
@@ -90,14 +86,13 @@ open class ReactAmwalPay: RCTEventEmitter {
             do {
                 // Guard: one SDK window at a time.
                 if self.sdkWindow != nil {
-                    AmwalLog.warn("SDK already presented — ignoring duplicate initiate call", tag: "SDK")
+                    AmwalLog.warn("SDK already visible — ignoring duplicate initiate call", tag: "SDK")
                     return
                 }
 
                 let sdkConfig = self.buildConfig(config)
                 AmwalLog.info("Building SDK config — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
 
-                // Find the active scene to attach our window to.
                 guard let windowScene = UIApplication.shared.connectedScenes
                     .compactMap({ $0 as? UIWindowScene })
                     .first(where: { $0.activationState == .foregroundActive })
@@ -125,25 +120,17 @@ open class ReactAmwalPay: RCTEventEmitter {
                     }
                 )
 
-                // A dedicated UIWindow at alert+1 sits above every React Native window,
-                // guaranteeing the Flutter VC is visible regardless of RN window levels.
+                // Set sdkVC as the window root directly — no present() call needed.
+                // A UIWindow at alert+1 sits above every React Native window so the
+                // Flutter payment UI is guaranteed to be visible.
                 let window = UIWindow(windowScene: windowScene)
                 window.windowLevel = UIWindow.Level.alert + 1
                 window.backgroundColor = .white
-
-                let containerVC = UIViewController()
-                containerVC.view.backgroundColor = .white
-                window.rootViewController = containerVC
+                window.rootViewController = sdkVC
                 window.makeKeyAndVisible()
                 self.sdkWindow = window
 
-                sdkVC.modalPresentationStyle = .overFullScreen
-                self.presentingVC = sdkVC
-
-                AmwalLog.info("Presenting SDK in dedicated window (level \(window.windowLevel.rawValue))", tag: "SDK")
-                containerVC.present(sdkVC, animated: false) {
-                    AmwalLog.info("SDK presented", tag: "SDK")
-                }
+                AmwalLog.info("SDK window visible (level \(window.windowLevel.rawValue))", tag: "SDK")
             } catch {
                 AmwalLog.error("initiate failed: \(error)", tag: "SDK")
                 self.tearDownSDKWindow()
@@ -159,7 +146,6 @@ open class ReactAmwalPay: RCTEventEmitter {
         }, completion: { _ in
             window.isHidden = true
             self.sdkWindow = nil
-            self.presentingVC = nil
         })
     }
 
