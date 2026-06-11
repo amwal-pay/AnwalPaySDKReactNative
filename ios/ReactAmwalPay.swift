@@ -11,36 +11,14 @@ struct AmwalLog {
     static func error(_ msg: String, tag: String = "") { print("\(prefix) 🔴 [\(tag)] \(msg)") }
 }
 
-extension UIViewController {
-    static func getTopMostViewController() -> UIViewController? {
-        // Prefer the foreground-active scene so we always present on the visible screen.
-        let scene = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .first(where: { $0.activationState == .foregroundActive })
-            ?? UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .first
-
-        let keyWindow = scene?.windows.first(where: { $0.isKeyWindow })
-            ?? scene?.windows.first
-
-        var top = keyWindow?.rootViewController
-        while let presented = top?.presentedViewController {
-            // Skip view controllers that are being dismissed to avoid presenting on a disappearing VC.
-            if presented.isBeingDismissed { break }
-            top = presented
-        }
-        return top
-    }
-}
-
 @objc(ReactAmwalPay)
 open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
     private weak var presentingVC: UIViewController?
+    // Strong ref keeps the window alive while the SDK is visible.
+    private var sdkWindow: UIWindow?
 
-    // Pre-warmed SDK instance — initialized once per module lifetime so the
-    // Flutter engine is ready long before the user taps "pay".
+    // Pre-warmed SDK instance — one Flutter engine per app session.
     private lazy var sdk: AmwalSDK = {
         AmwalLog.info("Pre-warming AmwalSDK Flutter engine", tag: "SDK")
         return AmwalSDK()
@@ -48,8 +26,7 @@ open class ReactAmwalPay: RCTEventEmitter {
 
     override init() {
         super.init()
-        // Boot the Flutter engine immediately when the native module is instantiated
-        // (at JS bridge startup) rather than waiting for the first addListener call.
+        // Boot the Flutter engine at bridge startup so it is warm before any button press.
         DispatchQueue.main.async { _ = self.sdk }
     }
 
@@ -57,10 +34,7 @@ open class ReactAmwalPay: RCTEventEmitter {
         return ["onResponse", "onCustomerId"]
     }
 
-    open override func startObserving() {
-        hasListeners = true
-    }
-
+    open override func startObserving() { hasListeners = true }
     open override func stopObserving() { hasListeners = false }
 
     private func emitOnResponse(_ params: [String: Any]) {
@@ -114,8 +88,8 @@ open class ReactAmwalPay: RCTEventEmitter {
     open func initiate(_ config: [String: Any]) {
         DispatchQueue.main.async {
             do {
-                // Guard: don't present a second SDK on top of one that's already visible.
-                if let existing = self.presentingVC, existing.isBeingPresented || existing.presentingViewController != nil {
+                // Guard: one SDK window at a time.
+                if self.sdkWindow != nil {
                     AmwalLog.warn("SDK already presented — ignoring duplicate initiate call", tag: "SDK")
                     return
                 }
@@ -123,31 +97,23 @@ open class ReactAmwalPay: RCTEventEmitter {
                 let sdkConfig = self.buildConfig(config)
                 AmwalLog.info("Building SDK config — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
 
-                guard let rootVC = UIViewController.getTopMostViewController() else {
-                    AmwalLog.error("No root VC found", tag: "SDK")
-                    self.emitOnResponse(["status": "ERROR", "message": "No root view controller"])
+                // Find the active scene to attach our window to.
+                guard let windowScene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState == .foregroundActive })
+                    ?? UIApplication.shared.connectedScenes
+                        .compactMap({ $0 as? UIWindowScene })
+                        .first else {
+                    AmwalLog.error("No active UIWindowScene found", tag: "SDK")
+                    self.emitOnResponse(["status": "ERROR", "message": "No active window scene"])
                     return
                 }
-
-                // Guard: if the presenting VC is mid-transition it can't host a modal.
-                guard !rootVC.isBeingPresented, !rootVC.isBeingDismissed else {
-                    AmwalLog.warn("Root VC is mid-transition — deferring presentation", tag: "SDK")
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        self.initiate(config)
-                    }
-                    return
-                }
-
-                AmwalLog.info("Presenting from: \(type(of: rootVC))", tag: "SDK")
 
                 let sdkVC = try self.sdk.createViewController(
                     config: sdkConfig,
                     onResponse: { [weak self] response in
                         AmwalLog.info("onResponse received", tag: "SDK")
-                        DispatchQueue.main.async {
-                            self?.presentingVC?.dismiss(animated: true)
-                            self?.presentingVC = nil
-                        }
+                        DispatchQueue.main.async { self?.tearDownSDKWindow() }
                         guard let response = response,
                               let data = response.data(using: .utf8),
                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
@@ -159,19 +125,42 @@ open class ReactAmwalPay: RCTEventEmitter {
                     }
                 )
 
+                // A dedicated UIWindow at alert+1 sits above every React Native window,
+                // guaranteeing the Flutter VC is visible regardless of RN window levels.
+                let window = UIWindow(windowScene: windowScene)
+                window.windowLevel = UIWindow.Level.alert + 1
+                window.backgroundColor = .white
+
+                let containerVC = UIViewController()
+                containerVC.view.backgroundColor = .white
+                window.rootViewController = containerVC
+                window.makeKeyAndVisible()
+                self.sdkWindow = window
+
                 sdkVC.modalPresentationStyle = .overFullScreen
-                // White background prevents a black/transparent flash before Flutter's first frame paints.
-                sdkVC.view.backgroundColor = .white
                 self.presentingVC = sdkVC
-                // animated: false eliminates the slide-up window during which Flutter hasn't rendered yet.
-                rootVC.present(sdkVC, animated: false) {
-                    AmwalLog.info("SDK presented over \(type(of: rootVC))", tag: "SDK")
+
+                AmwalLog.info("Presenting SDK in dedicated window (level \(window.windowLevel.rawValue))", tag: "SDK")
+                containerVC.present(sdkVC, animated: false) {
+                    AmwalLog.info("SDK presented", tag: "SDK")
                 }
             } catch {
                 AmwalLog.error("initiate failed: \(error)", tag: "SDK")
+                self.tearDownSDKWindow()
                 self.emitOnResponse(["status": "ERROR", "message": error.localizedDescription])
             }
         }
+    }
+
+    private func tearDownSDKWindow() {
+        guard let window = sdkWindow else { return }
+        UIView.animate(withDuration: 0.25, animations: {
+            window.alpha = 0
+        }, completion: { _ in
+            window.isHidden = true
+            self.sdkWindow = nil
+            self.presentingVC = nil
+        })
     }
 
     @objc
