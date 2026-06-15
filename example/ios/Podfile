@@ -44,14 +44,23 @@ target 'ReactAmwalPayExample' do
       # :ccache_enabled => true
     )
 
-  # Set "Build Libraries for Distribution" to NO for amwalsdk and exclude x86_64
-  installer.pods_project.targets.each do |target|
-    if target.name == 'amwalsdk'
-      target.build_configurations.each do |config|
-        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
-        config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
+    # Support both Intel (x86_64) and Apple Silicon (arm64) Mac simulators.
+    # Detect host architecture and exclude the slice the pre-built xcframework
+    # does not provide for the simulator, so Xcode doesn't try to link it.
+    host_arch = `uname -m`.strip
+    installer.pods_project.targets.each do |target|
+      if target.name == 'amwalsdk'
+        target.build_configurations.each do |config|
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+          if host_arch == 'arm64'
+            # Apple Silicon: simulator uses arm64 — exclude the Intel simulator slice
+            config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
+          else
+            # Intel: simulator uses x86_64 — exclude the Apple Silicon simulator slice
+            config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+          end
+        end
       end
     end
   end
-end
 end
