@@ -28,7 +28,12 @@ extension UIViewController {
 @objc(ReactAmwalPay)
 open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
-    private weak var presentingVC: UIViewController?
+    /// Host view controller for the SDK. We present the pod's own
+    /// `SDKWindowViewController` — the exact component the native
+    /// AnwalPaySDKNativeiOS example uses — which spawns the Flutter engine in
+    /// its own dedicated UIWindow from `viewDidAppear`. Held strongly so the
+    /// FlutterEngine inside it is not torn down early.
+    private var sdkHostVC: UIViewController?
 
     open override func supportedEvents() -> [String]! {
         return ["onResponse", "onCustomerId"]
@@ -127,6 +132,13 @@ open class ReactAmwalPay: RCTEventEmitter {
         }
     }
 
+    /// Dismisses the SDK host VC (which tears down the SDK's own window via its
+    /// viewWillDisappear) and releases it.
+    private func dismissSDKHost() {
+        sdkHostVC?.dismiss(animated: false)
+        sdkHostVC = nil
+    }
+
     @objc
     open func initiate(_ config: [String: Any]) {
         AmwalLog.info("initiate() called — thread=\(Thread.isMainThread ? "main" : "bg") hasListeners=\(self.hasListeners)", tag: "SDK")
@@ -138,30 +150,25 @@ open class ReactAmwalPay: RCTEventEmitter {
                 let sdkConfig = self.buildConfig(config)
                 AmwalLog.info("Step 1/5 done — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
 
-                AmwalLog.info("Step 2/5 — resolving top-most view controller", tag: "SDK")
+                AmwalLog.info("Step 2/3 — resolving top-most view controller", tag: "SDK")
                 guard let rootVC = UIViewController.getTopMostViewController() else {
                     AmwalLog.error("No root VC found — cannot present SDK", tag: "SDK")
                     self.emitOnResponse(["status": "ERROR", "message": "No root view controller"])
                     return
                 }
-                AmwalLog.info("Step 2/5 done — rootVC=\(type(of: rootVC)) view.window=\(String(describing: rootVC.view.window)) alreadyPresenting=\(String(describing: rootVC.presentedViewController))", tag: "SDK")
+                AmwalLog.info("Step 2/3 done — rootVC=\(type(of: rootVC))", tag: "SDK")
 
-                AmwalLog.info("Step 3/5 — instantiating AmwalSDK()", tag: "SDK")
-                let sdk = AmwalSDK()
-                AmwalLog.info("Step 3/5 done — AmwalSDK instance created", tag: "SDK")
-
-                AmwalLog.info("Step 4/5 — calling createViewController()", tag: "SDK")
-                let createStart = Date()
-                let sdkVC = try sdk.createViewController(
+                AmwalLog.info("Step 3/3 — presenting pod SDKWindowViewController (native pattern)", tag: "SDK")
+                // Use the pod's own SDKWindowViewController — the exact component
+                // the native AnwalPaySDKNativeiOS example uses. It creates the
+                // Flutter engine in its own dedicated UIWindow from viewDidAppear.
+                let hostVC = SDKWindowViewController(
                     config: sdkConfig,
                     onResponse: { [weak self] response in
                         AmwalLog.info("⬅️ onResponse received — raw: \(response ?? "nil")", tag: "CALLBACK")
                         DispatchQueue.main.async {
-                            AmwalLog.info("onResponse — dismissing presented SDK VC", tag: "CALLBACK")
-                            self?.presentingVC?.dismiss(animated: true) {
-                                AmwalLog.info("onResponse — dismiss complete", tag: "CALLBACK")
-                            }
-                            self?.presentingVC = nil
+                            AmwalLog.info("onResponse — dismissing SDK host", tag: "CALLBACK")
+                            self?.dismissSDKHost()
                         }
                         guard let response = response,
                               let data = response.data(using: .utf8),
@@ -178,32 +185,12 @@ open class ReactAmwalPay: RCTEventEmitter {
                         self?.emitOnCustomerId(customerId)
                     }
                 )
-                let createMs = Int(Date().timeIntervalSince(createStart) * 1000)
-                AmwalLog.info("Step 4/5 done — createViewController returned \(type(of: sdkVC)) in \(createMs)ms isViewLoaded=\(sdkVC.isViewLoaded)", tag: "SDK")
-
-                AmwalLog.info("Step 5/5 — presenting SDK VC over rootVC", tag: "SDK")
-                sdkVC.modalPresentationStyle = .overFullScreen
-                self.presentingVC = sdkVC
-                rootVC.present(sdkVC, animated: true) {
-                    AmwalLog.info("Step 5/5 done — present() completion fired", tag: "SDK")
-                    AmwalLog.info("post-present — sdkVC.view.window=\(String(describing: sdkVC.view.window)) frame=\(sdkVC.view.frame) hidden=\(sdkVC.view.isHidden) alpha=\(sdkVC.view.alpha)", tag: "SDK")
+                hostVC.modalPresentationStyle = .overFullScreen
+                hostVC.view.backgroundColor = .clear
+                self.sdkHostVC = hostVC
+                rootVC.present(hostVC, animated: false) {
+                    AmwalLog.info("Step 3/3 done — host presented; SDK spawns its own window in viewDidAppear", tag: "SDK")
                     self.logWindowHierarchy("after-present")
-                }
-
-                // Visibility watchdogs: confirm the SDK actually appeared on screen.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    let onScreen = sdkVC.view.window != nil
-                    AmwalLog.info("watchdog@1s — onScreen=\(onScreen) view.window=\(String(describing: sdkVC.view.window)) frame=\(sdkVC.view.frame)", tag: "VISIBILITY")
-                    if !onScreen {
-                        AmwalLog.error("watchdog@1s — SDK view is NOT in any window (not visible)", tag: "VISIBILITY")
-                    }
-                }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                    let onScreen = sdkVC.view.window != nil
-                    AmwalLog.info("watchdog@3s — onScreen=\(onScreen) subviews=\(sdkVC.view.subviews.count)", tag: "VISIBILITY")
-                    if !onScreen {
-                        AmwalLog.error("watchdog@3s — SDK still NOT visible after 3s", tag: "VISIBILITY")
-                    }
                 }
             } catch {
                 AmwalLog.error("initiate failed at createViewController/present — error: \(error)", tag: "SDK")

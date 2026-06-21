@@ -46,7 +46,11 @@ workflows:
       - name: Build iOS
         script: |
           cd example/ios
-          pod install
+          # This is a production archive for a physical device, so we need the
+          # Release subspec (AOT Flutter xcframework, all-arch). The Podfile now
+          # defaults to Debug (JIT) for local simulator runs, which cannot be
+          # archived for device — hence the explicit override here.
+          AMWAL_SUBSPEC=Release pod install
           xcode-project build-ipa \
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME" \
