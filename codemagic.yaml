@@ -51,10 +51,22 @@ workflows:
           # defaults to Debug (JIT) for local simulator runs, which cannot be
           # archived for device — hence the explicit override here.
           AMWAL_SUBSPEC=Release pod install
+
+          # build-ipa filters xcodebuild output down to warnings and hides the
+          # real error. Run it without failing the step, then dump the actual
+          # errors from the xcodebuild log so they show up in the build output.
+          set +e
           xcode-project build-ipa \
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME" \
               --archive-flags="-destination 'generic/platform=iOS' BUILD_LIBRARIES_FOR_DISTRIBUTION=NO"
+          BUILD_EXIT=$?
+          if [ $BUILD_EXIT -ne 0 ]; then
+            echo "==================== XCODEBUILD ERRORS ===================="
+            grep -h -E "error:|fatal error:|ld: |Undefined symbol|clang:|The following build commands failed|note: " /tmp/xcodebuild_logs/*.log 2>/dev/null | tail -120
+            echo "================== END XCODEBUILD ERRORS =================="
+            exit $BUILD_EXIT
+          fi
 
       - name: Upload to App Store Connect (with retry)
         script: |
