@@ -8,17 +8,18 @@ workflows:
     environment:
       groups:
         - firebase_credentials
-      ios_signing:
-        provisioning_profiles:
-          - reactnative
-        certificates:
-          - Code Magic Apple Dis
+      # Signing is automatic: the App Store Connect integration below fetches
+      # (and creates, if missing) a fresh distribution cert + provisioning
+      # profile on every build, so it never goes stale. The old manual
+      # `ios_signing:` block was removed after the cert/profile expired
+      # (May 25, 2026) and broke the archive.
       vars:
         GRADLE_USER_HOME: ~/.gradle
         NODE_VERSION: "22.15.0"
         GOOGLE_APPLICATION_CREDENTIALS: $FIREBASE_SERVICE_ACCOUNT
         XCODE_WORKSPACE: "ReactAmwalPayExample.xcworkspace"
         XCODE_SCHEME: "ReactAmwalPayExample"
+        BUNDLE_ID: "reactamwalpay.example"
       node: "$NODE_VERSION"
       xcode: edge
       java: 17
@@ -38,8 +39,15 @@ workflows:
         script: |
           cd example/ios
           agvtool new-version -all $(($BUILD_NUMBER + 1))
-      - name: Set up code signing settings on Xcode project
+      - name: Set up code signing (automatic via App Store Connect)
         script: |
+          keychain initialize
+          # Fetch (and create if missing) a fresh distribution cert + App Store
+          # provisioning profile from App Store Connect so signing never expires.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
           cd example/ios
           xcode-project use-profiles
 
