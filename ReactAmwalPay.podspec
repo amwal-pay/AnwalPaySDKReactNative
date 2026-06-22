@@ -19,6 +19,9 @@ Pod::Spec.new do |s|
 
   # Default to Release subspec
   amwal_subspec = ENV['AMWAL_SUBSPEC'] || 'Release'
-  s.dependency "amwalsdk/#{amwal_subspec}", '>= 1.1.94'
+  # Pinned to 1.1.93: 1.1.94 shipped a broken add-to-app build that floods
+  # "Communicating on a dead channel" and cancels the SDK at launch with
+  # onResponse(null). Do NOT bump to 1.1.94+ until that regression is fixed.
+  s.dependency "amwalsdk/#{amwal_subspec}", '1.1.93'
   install_modules_dependencies(s)
 end

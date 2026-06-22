@@ -101,7 +101,12 @@ open class ReactAmwalPay: RCTEventEmitter {
             extra.forEach { additionValues[$0] = $1 }
         }
         AmwalLog.debug("additionValues=\(additionValues)", tag: "CONFIG")
-        let secureHash = secureHashRaw
+        // NOTE: amwalsdk is pinned to 1.1.93 — the last version before the 1.1.94
+        // add-to-app regression (1.1.94 floods "dead channel" and cancels at launch
+        // with onResponse(null)). `Config.secureHash` was only introduced in 1.1.94,
+        // so it is intentionally not passed here. The secure hash is still applied
+        // server-side via the JS NetworkClient when fetching the session token.
+        // Re-add `secureHash:` here once the SDK team ships a fixed 1.1.95+.
         return Config(
             environment: mapEnvironment(raw["environment"] as? String ?? "SIT"),
             sessionToken: raw["sessionToken"] as? String ?? "",
@@ -114,8 +119,7 @@ open class ReactAmwalPay: RCTEventEmitter {
             transactionType: mapTransactionType(raw["transactionType"] as? String ?? "CARD_WALLET"),
             transactionId: raw["transactionId"] as? String ?? Config.generateTransactionId(),
             additionValues: additionValues,
-            merchantReference: raw["merchantReference"] as? String,
-            secureHash: secureHash
+            merchantReference: raw["merchantReference"] as? String
         )
     }
 

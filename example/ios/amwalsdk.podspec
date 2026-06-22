@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'amwalsdk'
-  s.version          = '1.1.94'
+  s.version          = '1.1.93'
   s.summary          = 'AMWAL SDK for iOS'
   s.description      = 'The AMWAL SDK provides features for payment integration in iOS applications.'
   s.homepage         = 'https://github.com/amwal-pay/AnwalPaySDKNativeiOS'
