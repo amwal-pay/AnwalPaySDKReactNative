@@ -101,12 +101,6 @@ open class ReactAmwalPay: RCTEventEmitter {
             extra.forEach { additionValues[$0] = $1 }
         }
         AmwalLog.debug("additionValues=\(additionValues)", tag: "CONFIG")
-        // NOTE: amwalsdk is pinned to 1.1.93 — the last version before the 1.1.94
-        // add-to-app regression (1.1.94 floods "dead channel" and cancels at launch
-        // with onResponse(null)). `Config.secureHash` was only introduced in 1.1.94,
-        // so it is intentionally not passed here. The secure hash is still applied
-        // server-side via the JS NetworkClient when fetching the session token.
-        // Re-add `secureHash:` here once the SDK team ships a fixed 1.1.95+.
         return Config(
             environment: mapEnvironment(raw["environment"] as? String ?? "SIT"),
             sessionToken: raw["sessionToken"] as? String ?? "",
@@ -136,10 +130,18 @@ open class ReactAmwalPay: RCTEventEmitter {
         }
     }
 
-    /// Dismisses the SDK host VC (which tears down the SDK's own window via its
-    /// viewWillDisappear) and releases it.
+    /// Removes the SDK host VC from its parent (mirrors how SwiftUI's
+    /// UIViewControllerRepresentable tears down a child VC). Calling
+    /// beginAppearanceTransition(false) triggers viewWillDisappear on the host,
+    /// which calls dismissSDKWindow() inside SDKWindowViewController and hides
+    /// the Flutter UIWindow before we remove it from the hierarchy.
     private func dismissSDKHost() {
-        sdkHostVC?.dismiss(animated: false)
+        guard let host = sdkHostVC else { return }
+        host.beginAppearanceTransition(false, animated: false)
+        host.endAppearanceTransition()
+        host.willMove(toParent: nil)
+        host.view.removeFromSuperview()
+        host.removeFromParent()
         sdkHostVC = nil
     }
 
@@ -162,16 +164,21 @@ open class ReactAmwalPay: RCTEventEmitter {
                 }
                 AmwalLog.info("Step 2/3 done — rootVC=\(type(of: rootVC))", tag: "SDK")
 
-                AmwalLog.info("Step 3/3 — presenting pod SDKWindowViewController (native pattern)", tag: "SDK")
-                // Use the pod's own SDKWindowViewController — the exact component
-                // the native AnwalPaySDKNativeiOS example uses. It creates the
-                // Flutter engine in its own dedicated UIWindow from viewDidAppear.
+                AmwalLog.info("Step 3/3 — embedding SDKWindowViewController as child VC (SwiftUI pattern)", tag: "SDK")
+                // Embed SDKWindowViewController as a child VC, mirroring exactly how
+                // the native AnwalPaySDKNativeiOS example does it via SwiftUI's
+                // UIViewControllerRepresentable. That pattern attaches the host VC to
+                // the live view hierarchy before viewDidAppear fires, so Flutter's
+                // window-scene lookup and first-frame rendering work reliably.
+                // Using modal present() instead caused a timing mismatch where
+                // viewDidAppear fired while UIKit was mid-presentation, preventing
+                // Flutter's addPostFrameCallback from triggering initializeSdk().
                 let hostVC = SDKWindowViewController(
                     config: sdkConfig,
                     onResponse: { [weak self] response in
                         AmwalLog.info("⬅️ onResponse received — raw: \(response ?? "nil")", tag: "CALLBACK")
                         DispatchQueue.main.async {
-                            AmwalLog.info("onResponse — dismissing SDK host", tag: "CALLBACK")
+                            AmwalLog.info("onResponse — removing SDK host", tag: "CALLBACK")
                             self?.dismissSDKHost()
                         }
                         guard let response = response,
@@ -189,13 +196,20 @@ open class ReactAmwalPay: RCTEventEmitter {
                         self?.emitOnCustomerId(customerId)
                     }
                 )
-                hostVC.modalPresentationStyle = .overFullScreen
                 hostVC.view.backgroundColor = .clear
                 self.sdkHostVC = hostVC
-                rootVC.present(hostVC, animated: false) {
-                    AmwalLog.info("Step 3/3 done — host presented; SDK spawns its own window in viewDidAppear", tag: "SDK")
-                    self.logWindowHierarchy("after-present")
-                }
+
+                // Add as child VC — same lifecycle as UIViewControllerRepresentable
+                rootVC.addChild(hostVC)
+                hostVC.view.frame = rootVC.view.bounds
+                hostVC.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                rootVC.view.addSubview(hostVC.view)
+                // Manually drive appearance transitions so viewWillAppear/viewDidAppear fire
+                hostVC.beginAppearanceTransition(true, animated: false)
+                hostVC.endAppearanceTransition()
+                hostVC.didMove(toParent: rootVC)
+                AmwalLog.info("Step 3/3 done — host embedded as child; SDK spawns its own window in viewDidAppear", tag: "SDK")
+                self.logWindowHierarchy("after-embed")
             } catch {
                 AmwalLog.error("initiate failed at createViewController/present — error: \(error)", tag: "SDK")
                 AmwalLog.error("error details: \(String(describing: error))", tag: "SDK")
