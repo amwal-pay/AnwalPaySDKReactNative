@@ -17,7 +17,6 @@ import {
   Environment,
   Currency,
   TransactionType,
-  Logger,
   type AmwalPayConfig,
 } from 'react-amwal-pay';
 import LogsViewer from './LogsViewer';
@@ -409,19 +408,18 @@ export const PaymentScreen: React.FC = () => {
 
   React.useEffect(() => {
     LogsManager.addLog('PaymentScreen initialized', LogType.INFO);
-    Logger.getInstance().setDebugEnabled(true);
   }, []);
 
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
-    environment: 'SIT' as Environment,
+    environment: 'UAT' as Environment,
     currency: 'OMR' as Currency,
     transactionType: 'CARD_WALLET' as TransactionType,
     locale: 'en',
-    merchantId: '84131',
-    terminalId: '811018',
+    merchantId: '116194',
+    terminalId: '708393',
     amount: '1',
     secureHash:
-      '8570CEED656C8818E4A7CE04F22206358F272DAD5F0227D322B654675ABF8F83',
+      '2B03FCDC101D3F160744342BFBA0BEA0E835EE436B6A985BA30464418392C703',
     merchantReference: '1234',
     additionValues: {
       useBottomSheetDesign: 'false',
@@ -501,6 +499,13 @@ export const PaymentScreen: React.FC = () => {
     );
   };
 
+  // AUTO-START: fires once, 2s after mount
+  React.useEffect(() => {
+    const t = setTimeout(handleInitializePayment, 2000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.appBar}>
@@ -516,9 +521,6 @@ export const PaymentScreen: React.FC = () => {
           <TouchableOpacity
             style={styles.appBarButton}
             onPress={() => {
-              const logger = Logger.getInstance();
-              const sdkLogs = logger.exportLogs();
-              console.log('SDK Logs:', sdkLogs);
               Alert.alert('SDK Logs', 'Check console for detailed logs');
             }}
             accessibilityLabel="Export SDK Logs"

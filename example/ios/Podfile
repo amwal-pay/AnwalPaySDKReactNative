@@ -19,10 +19,13 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
+  # Use local Release build (1.1.93) — matches native iOS working version
+  pod 'amwalsdk/Release', :path => '../../../amwal_pay_sdk/AnwalPaySDKNativeiOSExample/amwalsdk'
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
+    :app_path => "#{File.expand_path('..', __dir__)}"
   )
  
   post_install do |installer|

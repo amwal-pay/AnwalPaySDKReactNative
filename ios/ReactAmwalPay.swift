@@ -29,6 +29,7 @@ extension UIViewController {
 open class ReactAmwalPay: RCTEventEmitter {
     private var hasListeners = false
     private weak var presentingVC: UIViewController?
+    private var sdkWindow: UIWindow?
 
     open override func supportedEvents() -> [String]! {
         return ["onResponse", "onCustomerId"]
@@ -66,7 +67,6 @@ open class ReactAmwalPay: RCTEventEmitter {
         if let extra = raw["additionValues"] as? [String: String] {
             extra.forEach { additionValues[$0] = $1 }
         }
-        let secureHash = raw["secureHash"] as? String
         return Config(
             environment: mapEnvironment(raw["environment"] as? String ?? "SIT"),
             sessionToken: raw["sessionToken"] as? String ?? "",
@@ -79,33 +79,36 @@ open class ReactAmwalPay: RCTEventEmitter {
             transactionType: mapTransactionType(raw["transactionType"] as? String ?? "CARD_WALLET"),
             transactionId: raw["transactionId"] as? String ?? Config.generateTransactionId(),
             additionValues: additionValues,
-            merchantReference: raw["merchantReference"] as? String,
-            secureHash: secureHash
+            merchantReference: raw["merchantReference"] as? String
         )
     }
 
     @objc
     open func initiate(_ config: [String: Any]) {
         DispatchQueue.main.async {
+            guard let windowScene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive })
+                ?? UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first
+            else {
+                AmwalLog.error("No window scene found", tag: "SDK")
+                self.emitOnResponse(["status": "ERROR", "message": "No window scene"])
+                return
+            }
+
+            let sdkConfig = self.buildConfig(config)
+            AmwalLog.info("Building SDK config — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
+
             do {
-                let sdkConfig = self.buildConfig(config)
-                AmwalLog.info("Building SDK config — env: \(sdkConfig.environment), amount: \(sdkConfig.amount)", tag: "SDK")
-
-                guard let rootVC = UIViewController.getTopMostViewController() else {
-                    AmwalLog.error("No root VC found", tag: "SDK")
-                    self.emitOnResponse(["status": "ERROR", "message": "No root view controller"])
-                    return
-                }
-                AmwalLog.info("Presenting from: \(type(of: rootVC))", tag: "SDK")
-
                 let sdk = AmwalSDK()
-                let sdkVC = try sdk.createViewController(
+                let flutterVC = try sdk.createViewController(
                     config: sdkConfig,
                     onResponse: { [weak self] response in
                         AmwalLog.info("onResponse received", tag: "SDK")
                         DispatchQueue.main.async {
-                            self?.presentingVC?.dismiss(animated: true)
-                            self?.presentingVC = nil
+                            self?.sdkWindow?.isHidden = true
+                            self?.sdkWindow?.rootViewController = nil
+                            self?.sdkWindow = nil
                         }
                         guard let response = response,
                               let data = response.data(using: .utf8),
@@ -118,13 +121,18 @@ open class ReactAmwalPay: RCTEventEmitter {
                     }
                 )
 
-                sdkVC.modalPresentationStyle = .overFullScreen
-                self.presentingVC = sdkVC
-                rootVC.present(sdkVC, animated: true) {
-                    AmwalLog.info("SDK presented", tag: "SDK")
-                }
+                let containerVC = SDKContainerVC(flutterVC: flutterVC)
+                containerVC.view.backgroundColor = .clear
+
+                let window = UIWindow(windowScene: windowScene)
+                window.windowLevel = .normal + 1
+                window.backgroundColor = .clear
+                window.rootViewController = containerVC
+                window.makeKeyAndVisible()
+                self.sdkWindow = window
+                AmwalLog.info("SDK window created and shown", tag: "SDK")
             } catch {
-                AmwalLog.error("initiate failed: \(error)", tag: "SDK")
+                AmwalLog.error("Failed to create Flutter VC: \(error)", tag: "SDK")
                 self.emitOnResponse(["status": "ERROR", "message": error.localizedDescription])
             }
         }
