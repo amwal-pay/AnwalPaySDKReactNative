@@ -16,8 +16,8 @@ Pod::Spec.new do |s|
   s.source_files = "ios/**/*.{h,m,mm,swift}"
   s.private_header_files = "ios/**/*.h"
 
-  # Default to Release subspec
+  # Default to Release subspec. Pinned to 1.1.93 — 1.1.94 has a dead-channel regression in React Native.
   amwal_subspec = ENV['AMWAL_SUBSPEC'] || 'Release'
-  s.dependency "amwalsdk/#{amwal_subspec}"
+  s.dependency "amwalsdk/#{amwal_subspec}", "1.1.93"
   install_modules_dependencies(s)
 end
