@@ -19,14 +19,14 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
-  pod 'amwalsdk/Release', '1.1.95'
+  pod 'amwalsdk/Release', '1.1.71'
 
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
     :app_path => "#{File.expand_path('..', __dir__)}"
   )
- 
+
   post_install do |installer|
 
     react_native_post_install(
@@ -44,7 +44,7 @@ target 'ReactAmwalPayExample' do
         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'x86_64'
       end
     end
-    
+
     # Fix fmt compilation issues with Xcode 26.4+
     # Xcode 26.4 enforces stricter C++20 consteval requirements that break fmt.
     # Compile fmt with C++17 to avoid consteval issues while keeping other pods on C++20.
@@ -54,7 +54,7 @@ target 'ReactAmwalPayExample' do
         config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
       end
     end
-    
+
     # Apply similar fixes to other C++ targets that might have issues
     ['RCT-Folly', 'glog', 'boost'].each do |cpp_target|
       if target.name == cpp_target

@@ -18,6 +18,6 @@ Pod::Spec.new do |s|
 
   # Default to Release subspec. Pinned to 1.1.95 — 1.1.94 had a dead-channel regression in React Native.
   amwal_subspec = ENV['AMWAL_SUBSPEC'] || 'Release'
-  s.dependency "amwalsdk/#{amwal_subspec}", "1.1.95"
+  s.dependency "amwalsdk/#{amwal_subspec}", "1.1.71"
   install_modules_dependencies(s)
 end
