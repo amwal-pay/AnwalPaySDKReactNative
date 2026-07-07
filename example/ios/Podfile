@@ -19,7 +19,7 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
-  pod 'amwalsdk/Release', '1.1.71'
+  pod 'amwalsdk/Release'
 
   use_react_native!(
     :path => config[:reactNativePath],
