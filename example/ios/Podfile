@@ -19,7 +19,10 @@ end
 target 'ReactAmwalPayExample' do
   config = use_native_modules!
 
-  pod 'amwalsdk/Release'
+  # Debug subspec for the simulator (JIT engine + kernel_blob.bin); the Release
+  # App.xcframework simulator slice is a stub and cannot launch the Flutter engine.
+  # For device/TestFlight builds: AMWAL_SUBSPEC=Release pod install
+  pod "amwalsdk/Release",'1.1.71'
 
   use_react_native!(
     :path => config[:reactNativePath],

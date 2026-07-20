@@ -499,13 +499,6 @@ export const PaymentScreen: React.FC = () => {
     );
   };
 
-  // AUTO-START: fires once, 2s after mount
-  React.useEffect(() => {
-    const t = setTimeout(handleInitializePayment, 2000);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.appBar}>
