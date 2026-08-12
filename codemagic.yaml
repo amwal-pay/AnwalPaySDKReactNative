@@ -20,7 +20,10 @@ workflows:
         XCODE_WORKSPACE: "ReactAmwalPayExample.xcworkspace"
         XCODE_SCHEME: "ReactAmwalPayExample"
       node: "$NODE_VERSION"
-      xcode: edge
+      # Do NOT use `edge`/`latest` — those track Xcode betas (currently 27.0 beta),
+      # which RN 0.79.2 does not support. Pin to the last stable Xcode the
+      # Podfile workarounds are written for.
+      xcode: 26.4
       java: 17
       cocoapods: default
 
