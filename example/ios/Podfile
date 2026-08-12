@@ -22,7 +22,13 @@ target 'ReactAmwalPayExample' do
   # Debug subspec for the simulator (JIT engine + kernel_blob.bin); the Release
   # App.xcframework simulator slice is a stub and cannot launch the Flutter engine.
   # For device/TestFlight builds: AMWAL_SUBSPEC=Release pod install
-  pod "amwalsdk/Release",'1.1.71'
+  # ReactAmwalPay.podspec also depends on amwalsdk and defaults to the Release
+  # subspec when AMWAL_SUBSPEC is unset. Force the default here so both
+  # dependents resolve the SAME subspec — otherwise CocoaPods activates both
+  # Debug and Release subspecs in this target, which vendor identically-named
+  # xcframeworks and triggers a "conflicting names" framework error.
+  ENV['AMWAL_SUBSPEC'] ||= 'Debug'
+  pod "amwalsdk/#{ENV['AMWAL_SUBSPEC']}",'1.1.104'
 
   use_react_native!(
     :path => config[:reactNativePath],
