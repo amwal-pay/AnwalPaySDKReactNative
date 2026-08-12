@@ -27,7 +27,7 @@ target 'ReactAmwalPayExample' do
   # dependents resolve the SAME subspec — otherwise CocoaPods activates both
   # Debug and Release subspecs in this target, which vendor identically-named
   # xcframeworks and triggers a "conflicting names" framework error.
-  ENV['AMWAL_SUBSPEC'] ||= 'Debug'
+  ENV['AMWAL_SUBSPEC'] ||= 'Release'
   pod "amwalsdk/#{ENV['AMWAL_SUBSPEC']}",'1.1.104'
 
   use_react_native!(
