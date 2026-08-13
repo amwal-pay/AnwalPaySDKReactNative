@@ -10,7 +10,14 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platforms    = { :ios => min_ios_version_supported }
+  # iOS 13.0 is the real floor of this SDK: the bridge in ios/ReactAmwalPay.swift
+  # only uses iOS 13+ API (connectedScenes / UIWindow(windowScene:)) and the
+  # amwalsdk pod it wraps declares :ios => '13.0'. Do NOT use
+  # min_ios_version_supported here — that follows the *host* React Native version
+  # (15.1 on RN 0.79) and would refuse to install into apps whose deployment
+  # target is lower. Host apps still get their own React Native floor applied on
+  # top of this by react_native_post_install.
+  s.platforms    = { :ios => "13.0" }
   s.source       = { :git => "https://github.com/amwal-pay/AnwalPaySDKReactNative.git", :tag => "#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,mm,swift}"

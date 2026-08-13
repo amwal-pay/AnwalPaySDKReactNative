@@ -28,6 +28,13 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Declared minimum iOS. NOTE: Xcode normally regenerates this key in the
+	     built bundle from IPHONEOS_DEPLOYMENT_TARGET (currently 15.1), so this
+	     value may not survive a build. It also does NOT change the compiled
+	     floor: the app binary and hermes.framework are built minos 15.1, so an
+	     iOS 13/14 device would still fail at launch. -->
+	<key>MinimumOSVersion</key>
+	<string>13.0</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 	  <!-- Do not change NSAllowsArbitraryLoads to true, or you will risk app rejection! -->
