@@ -8,16 +8,13 @@ workflows:
     environment:
       groups:
         - firebase_credentials
-      # Automatic signing: Codemagic fetches/creates the cert and profile from
-      # App Store Connect on every build, so they can never go stale. Do NOT go
-      # back to naming manually uploaded files here — those expire and break CI.
+      # Manual signing: uses the profile and certificate uploaded to Codemagic
+      # (Team settings > Code signing identities). Re-upload them when they expire.
       ios_signing:
         provisioning_profiles:
           - Amwal reactnative Example
         certificates:
-            - Code Magic Apple Dis
-        distribution_type: app_store
-        bundle_identifier: reactamwalpay.example
+          - Code Magic Apple Dis
       vars:
         GRADLE_USER_HOME: ~/.gradle
         NODE_VERSION: "22.15.0"
