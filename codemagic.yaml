@@ -12,6 +12,10 @@ workflows:
       # App Store Connect on every build, so they can never go stale. Do NOT go
       # back to naming manually uploaded files here — those expire and break CI.
       ios_signing:
+        provisioning_profiles:
+          - Amwal reactnative Example
+        certificates:
+            - Code Magic Apple Dis
         distribution_type: app_store
         bundle_identifier: reactamwalpay.example
       vars:
@@ -42,6 +46,14 @@ workflows:
         script: |
           cd example/ios
           agvtool new-version -all $(($BUILD_NUMBER + 1))
+      - name: Install CocoaPods
+        script: |
+          cd example/ios
+          pod install
+      # MUST run after `pod install`. `use-profiles` writes the signing settings
+      # into both ReactAmwalPayExample.xcodeproj and Pods.xcodeproj, and
+      # `pod install` regenerates Pods.xcodeproj from scratch — so running it
+      # first silently throws the pod-target signing settings away.
       - name: Set up code signing settings on Xcode project
         script: |
           cd example/ios
@@ -50,21 +62,31 @@ workflows:
       - name: Build iOS
         script: |
           cd example/ios
-          pod install
           xcode-project build-ipa \
               --workspace "$XCODE_WORKSPACE" \
               --scheme "$XCODE_SCHEME" \
-              --archive-flags="-destination 'generic/platform=iOS' BUILD_LIBRARIES_FOR_DISTRIBUTION=NO"
-      
+              --archive-flags="-destination 'generic/platform=iOS' BUILD_LIBRARIES_FOR_DISTRIBUTION=NO" \
+            || {
+              # `build-ipa` filters xcodebuild output, so a failed archive can
+              # print a couple of warnings and nothing else (see the "Failed to
+              # archive" build with no `error:` line). Dump the real diagnostics
+              # from the raw log before failing the step.
+              echo "===== xcodebuild diagnostics ====="
+              grep -nE "error:|fatal error|The following build commands failed|Command .* failed" /tmp/xcodebuild_logs/*.log | tail -100
+              echo "===== last 300 lines of xcodebuild log ====="
+              tail -300 /tmp/xcodebuild_logs/*.log
+              exit 1
+            }
+
       - name: Upload to App Store Connect (with retry)
         script: |
           IPA_PATH="example/ios/build/ios/ipa/ReactAmwalPayExample.ipa"
           MAX_RETRIES=3
           RETRY_COUNT=0
-          
+
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             echo "Upload attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES"
-            
+
             if app-store-connect publish --path "$IPA_PATH" 2>&1 | tee upload_log.txt; then
               # Check if upload actually succeeded despite errors
               if grep -q "UPLOAD SUCCEEDED" upload_log.txt || grep -q "No errors uploading" upload_log.txt; then
@@ -72,7 +94,7 @@ workflows:
                 exit 0
               fi
             fi
-            
+
             # Check if it's a transient error (500 errors)
             if grep -q "status code 500" upload_log.txt || grep -q "internal server error" upload_log.txt; then
               echo "⚠️  Transient Apple API error detected, retrying..."
@@ -85,7 +107,7 @@ workflows:
               exit 1
             fi
           done
-          
+
           echo "❌ Failed after $MAX_RETRIES attempts"
           exit 1
     artifacts:

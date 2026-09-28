@@ -14,7 +14,14 @@ export enum Currency {
 export enum TransactionType {
   NFC = 'NFC',
   CARD_WALLET = 'CARD_WALLET',
+  /**
+   * Digital wallet. `APPLE_PAY` and `GOOGLE_PAY` are interchangeable — the
+   * native bridges resolve the wallet for the platform they run on (Apple Pay
+   * on iOS, Google Pay on Android), mirroring the Flutter SDK's single
+   * `TransactionType.appleOrGooglePay`. Use whichever name reads better.
+   */
   APPLE_PAY = 'APPLE_PAY',
+  GOOGLE_PAY = 'GOOGLE_PAY',
 }
 
 export interface AmwalPayResponse {
