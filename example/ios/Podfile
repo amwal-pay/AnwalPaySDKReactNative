@@ -28,7 +28,7 @@ target 'ReactAmwalPayExample' do
   # Debug and Release subspecs in this target, which vendor identically-named
   # xcframeworks and triggers a "conflicting names" framework error.
   ENV['AMWAL_SUBSPEC'] ||= 'Release'
-  pod "amwalsdk/#{ENV['AMWAL_SUBSPEC']}",'1.1.104'
+  pod "amwalsdk/#{ENV['AMWAL_SUBSPEC']}",'1.1.107'
 
   use_react_native!(
     :path => config[:reactNativePath],
