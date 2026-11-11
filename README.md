@@ -102,6 +102,59 @@ Or you can set it when running pod install:
 AMWAL_SUBSPEC=Release pod install
 ```
 
+#### 3.5 Apple Pay Setup (Required for `APPLE_PAY` transactions)
+
+Apple Pay will **not** work without the In-App Payments capability. If it is missing, the SDK aborts with
+`Digital wallet payments are not available on this device` as soon as you tap **Start Payment**, because
+PassKit cannot read the user's provisioned cards.
+
+1. **Register a Merchant ID** in the [Apple Developer portal](https://developer.apple.com/account/resources/identifiers/list/merchant)
+   (Certificates, Identifiers & Profiles → Identifiers → Merchant IDs) under the team that signs your app.
+2. **Enable the capability** in Xcode: select your app target → *Signing & Capabilities* → **+ Capability** →
+   **Apple Pay**, then tick your Merchant ID. This writes `com.apple.developer.in-app-payments` into your
+   `.entitlements` file:
+
+   ```xml
+   <key>com.apple.developer.in-app-payments</key>
+   <array>
+     <string>merchant.applepay.amwalpay</string>
+   </array>
+   ```
+
+3. **Attach an Apple Pay Payment Processing Certificate** to that Merchant ID, and make sure the Amwal
+   backend for the environment you are testing (SIT / UAT / PROD) holds the matching private key. A Merchant
+   ID that is merely registered will pass `canMakePayments`, but the payment sheet cannot be authorized —
+   this is the usual reason Apple Pay works in one sample app and not another on the *same* phone. The
+   bundled example uses `merchant.shahd.test`, the same test Merchant ID as the Flutter SDK example.
+
+4. **Pass the same Merchant ID to the SDK** via `additionValues.merchantIdentifier`. It defaults to
+   `merchant.applepay.amwalpay`, so override it if you registered a different one:
+
+   ```js
+   await AmwalPaySDK.getInstance().startPayment({
+     // ...
+     transactionType: TransactionType.APPLE_PAY,
+     additionValues: {
+       merchantIdentifier: 'merchant.your.id', // must match the entitlement
+     },
+   });
+   ```
+
+5. **Regenerate the provisioning profile** after adding the capability or changing the Merchant ID list
+   (Xcode does this automatically with automatic signing), then rebuild. A stale profile fails the build with
+   *"Provisioning profile ... doesn't support the merchant.your.id Merchant ID"* or *"... doesn't match the
+   entitlements file's value for the com.apple.developer.in-app-payments entitlement"*.
+
+**Testing notes**
+
+- Test on a **physical device** with a card already added to Wallet. The Amwal SDK's `Release` subspec is
+  required for devices, and the SDK only accepts cards on the `visa`, `masterCard`, `amex` and `discover`
+  networks — a Wallet with none of those also yields "not available on this device".
+- Apple Pay is only offered for the digital-wallet transaction types. `TransactionType.APPLE_PAY` and
+  `TransactionType.GOOGLE_PAY` are interchangeable: each native bridge resolves the wallet for the platform
+  it runs on (Apple Pay on iOS, Google Pay on Android), mirroring the Flutter SDK's single
+  `TransactionType.appleOrGooglePay`. One shared JS config therefore drives both platforms.
+
 ### Step 4: Android Setup
 
 No additional Android configuration is required. The SDK uses React Native's autolinking feature.
@@ -141,6 +194,9 @@ npm run android
 - **Linking issues**: Ensure `react-native.config.js` is in your project root
 - **Build errors**: Clean build folders and rebuild your project
 - **iOS build errors**: Verify that "Build Libraries for Distribution" is set to NO for amwalsdk target
+- **"Digital wallet payments are not available on this device"**: the Apple Pay capability is missing,
+  the Merchant ID in the entitlement does not match `additionValues.merchantIdentifier`, or the device has
+  no supported card in Wallet — see [3.5 Apple Pay Setup](#35-apple-pay-setup-required-for-apple_pay-transactions)
 
 ## Usage
 

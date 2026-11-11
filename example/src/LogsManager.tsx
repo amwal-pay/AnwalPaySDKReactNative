@@ -33,6 +33,23 @@ class LogsManagerClass {
     return this.logs;
   }
 
+  /**
+   * Renders every captured log as plain text, oldest first, so it can be
+   * shared / copied out of the device. `header` is prepended verbatim and is
+   * used to carry the SDK configuration the logs belong to.
+   */
+  exportAsText(header?: string): string {
+    const body = [...this.logs]
+      .reverse()
+      .map(
+        (log) =>
+          `[${log.timestamp.toISOString()}] ${log.type.padEnd(11)} ${log.message}`
+      )
+      .join('\n');
+
+    return header ? `${header}\n\n${body}` : body;
+  }
+
   clearLogs() {
     this.logs = [];
     this.listeners.forEach((l) => l());

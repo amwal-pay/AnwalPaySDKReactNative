@@ -11,6 +11,7 @@ import {
   Modal,
   Platform,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import {
   AmwalPaySDK,
@@ -388,7 +389,11 @@ const CURRENCY_ITEMS = [{ label: 'OMR', value: 'OMR' }];
 const TRANSACTION_TYPE_ITEMS = [
   { label: 'NFC', value: 'NFC' },
   { label: 'CARD_WALLET', value: 'CARD_WALLET' },
+  // APPLE_PAY and GOOGLE_PAY both mean "digital wallet" — the native bridges
+  // pick Apple Pay on iOS and Google Pay on Android, so either value works on
+  // either platform. Both are listed only to make that explicit while testing.
   { label: 'APPLE_PAY', value: 'APPLE_PAY' },
+  { label: 'GOOGLE_PAY', value: 'GOOGLE_PAY' },
 ];
 
 const IGNORE_RECEIPT_ITEMS = [
@@ -426,6 +431,17 @@ export const PaymentScreen: React.FC = () => {
       ignoreReceipt: 'false',
       primaryColor: '#1E88E5',
       secondaryColor: '#FFC107',
+      // Apple Pay: must match a merchant ID listed in
+      // ios/ReactAmwalPayExample/ReactAmwalPayExample.entitlements AND be
+      // registered under the signing team, otherwise PassKit refuses the
+      // payment sheet when transactionType is APPLE_PAY.
+      //
+      // This is the same merchant ID the Flutter example app uses
+      // (amwal_pay_sdk/example/ios/Runner/Runner.entitlements) — it is the one
+      // set up with an Apple Pay Payment Processing Certificate for the
+      // SIT/UAT backends. The SDK's built-in default
+      // ('merchant.applepay.amwalpay') is the production identifier.
+      merchantIdentifier: 'merchant.shahd.test',
     },
   });
 
@@ -486,6 +502,35 @@ export const PaymentScreen: React.FC = () => {
     }
   };
 
+  const handleExportLogs = async () => {
+    const logs = LogsManager.getLogs();
+    if (logs.length === 0) {
+      Alert.alert('SDK Logs', 'No logs captured yet. Run a payment first.');
+      return;
+    }
+
+    const header = [
+      `Amwal Pay SDK logs — ${new Date().toISOString()}`,
+      `Platform: ${Platform.OS} ${Platform.Version}`,
+      `Environment: ${config.environment}`,
+      `Transaction type: ${config.transactionType}`,
+      `Merchant: ${config.merchantId} / Terminal: ${config.terminalId}`,
+      `Amount: ${config.amount} ${config.currency}`,
+      `Merchant identifier: ${config.additionValues?.merchantIdentifier}`,
+      `Customer ID: ${customerId ?? '—'}`,
+      `Entries: ${logs.length}`,
+    ].join('\n');
+
+    try {
+      await Share.share({
+        title: 'Amwal Pay SDK logs',
+        message: LogsManager.exportAsText(header),
+      });
+    } catch (e) {
+      Alert.alert('SDK Logs', `Could not export logs: ${e}`);
+    }
+  };
+
   const isConfigValid = (): boolean => {
     return Boolean(
       config.environment &&
@@ -513,9 +558,7 @@ export const PaymentScreen: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.appBarButton}
-            onPress={() => {
-              Alert.alert('SDK Logs', 'Check console for detailed logs');
-            }}
+            onPress={handleExportLogs}
             accessibilityLabel="Export SDK Logs"
           >
             <Text style={{ fontSize: 20, color: '#28a745' }}>📋</Text>

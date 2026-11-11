@@ -54,22 +54,21 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
     
     Log.d(NAME, "initiate got here")
     try {
-      // Handle additionValues map
-      val additionValues = if (config.hasKey("additionValues")) {
-        val additionValuesMap = config.getMap("additionValues")
-        val map = mutableMapOf<String, String>()
-        additionValuesMap?.let { readableMap ->
+      // Handle additionValues map. The caller's entries are layered ON TOP of
+      // the SDK defaults rather than replacing them, matching the iOS bridge
+      // and the Flutter module — otherwise passing e.g. only `primaryColor`
+      // would drop `merchantIdentifier` / `useBottomSheetDesign`.
+      val additionValues = AmwalSDK.Config.generateDefaultAdditionValues().toMutableMap()
+      if (config.hasKey("additionValues")) {
+        config.getMap("additionValues")?.let { readableMap ->
           val iterator = readableMap.keySetIterator()
           while (iterator.hasNextKey()) {
             val key = iterator.nextKey()
             readableMap.getString(key)?.let { value ->
-              map[key] = value
+              additionValues[key] = value
             }
           }
         }
-        map.toMap()
-      } else {
-        AmwalSDK.Config.generateDefaultAdditionValues()
       }
 
       val sdkConfig = AmwalSDK.Config(
@@ -81,7 +80,7 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
         terminalId = config.getString("terminalId") ?: "",
         locale = java.util.Locale(config.getString("locale") ?: "en"),
         customerId = if (config.hasKey("customerId")) config.getString("customerId") else null,
-        transactionType = AmwalSDK.Config.TransactionType.valueOf(config.getString("transactionType") ?: ""),
+        transactionType = mapTransactionType(config.getString("transactionType")),
         transactionId = if (config.hasKey("transactionId")) config.getString("transactionId") else AmwalSDK.Config.generateTransactionId(),
         additionValues = additionValues,
         merchantReference = if (config.hasKey("merchantReference")) config.getString("merchantReference") else null
@@ -118,6 +117,24 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
       errorData.putString("message", e.message ?: "Unknown error")
       params.putMap("data", errorData)
       emitOnResponse(params)
+    }
+  }
+
+  /**
+   * Mirrors the Flutter SDK's single `TransactionType.appleOrGooglePay`: any
+   * digital-wallet type resolves to `GOOGLE_PAY` here, because the embedded
+   * Flutter module maps `googlePay` -> `appleOrGooglePay` (it matches on the
+   * substring "apple"/"google") and then picks the wallet by platform.
+   *
+   * `valueOf()` used to be called directly, which threw
+   * IllegalArgumentException for `APPLE_PAY` — the value the shared JS config
+   * sends — because the Android enum only declares NFC/CARD_WALLET/GOOGLE_PAY.
+   */
+  private fun mapTransactionType(value: String?): AmwalSDK.Config.TransactionType {
+    return when (value) {
+      "NFC" -> AmwalSDK.Config.TransactionType.NFC
+      "APPLE_PAY", "GOOGLE_PAY", "APPLE_OR_GOOGLE_PAY" -> AmwalSDK.Config.TransactionType.GOOGLE_PAY
+      else -> AmwalSDK.Config.TransactionType.CARD_WALLET
     }
   }
 

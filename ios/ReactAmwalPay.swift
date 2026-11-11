@@ -55,8 +55,17 @@ open class ReactAmwalPay: RCTEventEmitter {
         switch s { case "PROD": return .PROD; case "UAT": return .UAT; default: return .SIT }
     }
     private func mapCurrency(_ s: String) -> Config.Currency { return .OMR }
+    /// Mirrors the Flutter SDK's single `TransactionType.appleOrGooglePay`: any
+    /// digital-wallet type resolves to `.applePay` here, because the embedded
+    /// Flutter module maps `applePay` -> `appleOrGooglePay` (it matches on the
+    /// substring "apple"/"google") and then picks the wallet by platform.
+    /// Accepting `GOOGLE_PAY` too lets one JS config drive both platforms.
     private func mapTransactionType(_ s: String) -> Config.TransactionType {
-        switch s { case "NFC": return .nfc; case "APPLE_PAY": return .applePay; default: return .cardWallet }
+        switch s {
+        case "NFC": return .nfc
+        case "APPLE_PAY", "GOOGLE_PAY", "APPLE_OR_GOOGLE_PAY": return .applePay
+        default: return .cardWallet
+        }
     }
     private func mapLocale(_ s: String) -> Config.Locale {
         switch s { case "ar": return .ar; default: return .en }
