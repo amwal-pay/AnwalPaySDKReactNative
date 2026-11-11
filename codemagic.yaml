@@ -8,13 +8,17 @@ workflows:
     environment:
       groups:
         - firebase_credentials
-      # Manual signing: uses the profile and certificate uploaded to Codemagic
-      # (Team settings > Code signing identities). Re-upload them when they expire.
+      # Automatic signing: Codemagic fetches/creates the distribution certificate
+      # and App Store profile through the "Amwal CodeMagic" App Store Connect
+      # integration on every build, so they never go stale or mismatch. Apple Pay
+      # works because the generated profile carries the capabilities enabled on
+      # the App ID: reactamwalpay.example must have Apple Pay Payment Processing
+      # enabled with merchant.shahd.test and merchant.amwal.sdk (see
+      # ReactAmwalPayExample.entitlements). Do NOT go back to a manually uploaded
+      # profile: "Amwal reactnative Example" did not include the uploaded cert.
       ios_signing:
-        provisioning_profiles:
-          - Amwal reactnative Example
-        certificates:
-          - Code Magic Apple Dis
+        distribution_type: app_store
+        bundle_identifier: reactamwalpay.example
       vars:
         GRADLE_USER_HOME: ~/.gradle
         NODE_VERSION: "22.15.0"
