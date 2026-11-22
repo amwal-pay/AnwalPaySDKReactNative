@@ -426,6 +426,7 @@ export const PaymentScreen: React.FC = () => {
     secureHash:
       '2B03FCDC101D3F160744342BFBA0BEA0E835EE436B6A985BA30464418392C703',
     merchantReference: '1234',
+    splitProfileId: '',
     additionValues: {
       useBottomSheetDesign: 'false',
       ignoreReceipt: 'false',
@@ -651,6 +652,18 @@ export const PaymentScreen: React.FC = () => {
             setConfig({ ...config, merchantReference: value })
           }
           placeholder="Enter merchant reference"
+        />
+
+        <Text style={styles.label}>Split Profile ID (Optional)</Text>
+        <TextInput
+          style={styles.input}
+          value={config.splitProfileId}
+          onChangeText={(value) =>
+            setConfig({ ...config, splitProfileId: value })
+          }
+          placeholder="Split rule profile ID (By Transaction)"
+          autoCapitalize="none"
+          autoCorrect={false}
         />
 
         <Text style={styles.label}>Transaction Type</Text>

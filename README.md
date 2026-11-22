@@ -225,6 +225,7 @@ const config: AmwalPayConfig = {
   sessionToken: 'your-session-token', // optional
   transactionId: 'custom-transaction-id', // optional: auto-generated if not provided
   merchantReference: 'optional-merchant-reference', // optional: merchant reference for transaction tracking
+  splitProfileId: 'split-rule-profile-guid', // optional: "By Transaction" split rule profile ID
   additionValues: { // optional: custom key-value pairs for SDK configuration
     merchantIdentifier: 'merchant.applepay.amwalpay', // for Apple Pay configuration
     useBottomSheetDesign: 'true', // use bottom sheet design (v2)
@@ -371,6 +372,7 @@ The `AmwalPayConfig` interface includes the following properties:
 - `sessionToken`: (Optional) Your session token
 - `transactionId`: (Optional) Unique transaction identifier - auto-generated if not provided
 - `merchantReference`: (Optional) Merchant reference for transaction tracking
+- `splitProfileId`: (Optional) Split rule profile ID (GUID) for transaction-level split settlement. Use it only when the merchant's split rule is configured as **By Transaction**: in the merchant portal, open the merchant's split rules, open the rule, and copy its `profileId` from the rule details. The transaction amount is then settled across the rule's settlement accounts by the rule's percentages. When omitted, the merchant's default settlement applies. Requires `amwalsdk` pod 1.1.114+ (iOS) and `amwal_sdk` 1.1.113+ (Android).
 - `additionValues`: (Optional) Custom key-value pairs for SDK configuration (includes merchantIdentifier for Apple Pay)
 - `onCustomerId`: (Optional) Callback function for customer ID updates
 - `onResponse`: (Optional) Callback function for payment response

@@ -71,6 +71,11 @@ open class ReactAmwalPay: RCTEventEmitter {
         switch s { case "ar": return .ar; default: return .en }
     }
 
+    private func nonBlank(_ s: String?) -> String? {
+        guard let value = s?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
+        return value
+    }
+
     private func buildConfig(_ raw: [String: Any]) -> Config {
         var additionValues = Config.generateDefaultAdditionValues()
         if let extra = raw["additionValues"] as? [String: String] {
@@ -88,7 +93,8 @@ open class ReactAmwalPay: RCTEventEmitter {
             transactionType: mapTransactionType(raw["transactionType"] as? String ?? "CARD_WALLET"),
             transactionId: raw["transactionId"] as? String ?? Config.generateTransactionId(),
             additionValues: additionValues,
-            merchantReference: raw["merchantReference"] as? String
+            merchantReference: raw["merchantReference"] as? String,
+            splitProfileId: nonBlank(raw["splitProfileId"] as? String)
         )
     }
 

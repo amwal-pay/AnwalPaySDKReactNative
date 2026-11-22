@@ -83,7 +83,8 @@ class ReactAmwalPayModule(reactContext: ReactApplicationContext) :
         transactionType = mapTransactionType(config.getString("transactionType")),
         transactionId = if (config.hasKey("transactionId")) config.getString("transactionId") else AmwalSDK.Config.generateTransactionId(),
         additionValues = additionValues,
-        merchantReference = if (config.hasKey("merchantReference")) config.getString("merchantReference") else null
+        merchantReference = if (config.hasKey("merchantReference")) config.getString("merchantReference") else null,
+        splitProfileId = if (config.hasKey("splitProfileId")) config.getString("splitProfileId")?.trim()?.ifBlank { null } else null
       )
       
       // Ensure this runs on the UI thread

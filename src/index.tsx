@@ -38,6 +38,7 @@ export function initiate(config: AmwalPayConfig): void {
     transactionId: config.transactionId ?? UuidUtil.generateTransactionId(),
     additionValues: finalAdditionValues,
     merchantReference: config.merchantReference,
+    splitProfileId: config.splitProfileId?.trim() || undefined,
   };
 
   // Call the native module

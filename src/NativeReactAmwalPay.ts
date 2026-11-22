@@ -83,6 +83,13 @@ export interface AmwalPayConfig {
   additionValues?: { [key: string]: string };
   /** Optional merchant reference for transaction tracking */
   merchantReference?: string;
+  /**
+   * Optional split rule profile ID (GUID) for transaction-level split
+   * settlement. Use only when the merchant's split rule is configured as
+   * "By Transaction"; take the `profileId` from the rule details under the
+   * merchant's split rules on the portal. Sent as `SplitProfileId`.
+   */
+  splitProfileId?: string;
   /** Callback for payment response */
   onResponse: (response: AmwalPayResponse) => void;
   /** Callback for customer ID updates */
@@ -104,6 +111,7 @@ export interface AmwalPayNativeConfig {
   transactionId?: string;
   additionValues?: { [key: string]: string };
   merchantReference?: string;
+  splitProfileId?: string;
 }
 
 export interface Spec extends TurboModule {
