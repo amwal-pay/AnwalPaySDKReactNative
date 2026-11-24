@@ -22,6 +22,7 @@ import {
 } from 'react-amwal-pay';
 import LogsViewer from './LogsViewer';
 import { LogsManager, LogType } from './LogsManager';
+import { buildQCReport, logSdkResponse, markPaymentStart } from './QCLogging';
 
 interface ModalPickerProps {
   visible: boolean;
@@ -401,6 +402,11 @@ const IGNORE_RECEIPT_ITEMS = [
   { label: 'Yes', value: 'true' },
 ];
 
+const NETWORK_INSPECTOR_ITEMS = [
+  { label: 'No', value: 'false' },
+  { label: 'Yes', value: 'true' },
+];
+
 const BOTTOM_SHEET_ITEMS = [
   { label: 'No', value: 'false' },
   { label: 'Yes', value: 'true' },
@@ -416,20 +422,25 @@ export const PaymentScreen: React.FC = () => {
   }, []);
 
   const [config, setConfig] = useState<Partial<AmwalPayConfig>>({
-    environment: 'UAT' as Environment,
+    environment: 'SIT' as Environment,
     currency: 'OMR' as Currency,
     transactionType: 'CARD_WALLET' as TransactionType,
     locale: 'en',
-    merchantId: '116194',
-    terminalId: '708393',
+    merchantId: '7394',
+    terminalId: '196456',
     amount: '1',
     secureHash:
-      '2B03FCDC101D3F160744342BFBA0BEA0E835EE436B6A985BA30464418392C703',
+      'C0873776E2290E208FBBA27795DFC51B1531E73D187518106FE45DF344865149',
     merchantReference: '1234',
     splitProfileId: '',
     additionValues: {
       useBottomSheetDesign: 'false',
       ignoreReceipt: 'false',
+      // Trackly network inspector inside the SDK screens (floating bubble,
+      // two-finger long press, or shake). It is on by default in Debug SDK
+      // builds; this flag also turns it on in Release (amwalsdk/Release, AAR
+      // release). Example/QA only — it shows request and response bodies.
+      networkInspectorEnabled: 'true',
       primaryColor: '#1E88E5',
       secondaryColor: '#FFC107',
       // Apple Pay: must match a merchant ID listed in
@@ -449,7 +460,6 @@ export const PaymentScreen: React.FC = () => {
   // Define callbacks separately to avoid stale closure issues
   const handleCustomerId = React.useCallback((receivedCustomerId: string) => {
     setCustomerId(receivedCustomerId);
-    console.log('Customer ID received:', receivedCustomerId);
     LogsManager.addLog(
       `Customer ID received: ${receivedCustomerId}`,
       LogType.CUSTOMER_ID
@@ -459,11 +469,7 @@ export const PaymentScreen: React.FC = () => {
   const handleResponse = React.useCallback((response: any) => {
     // Handle both Android (wrapped in "data") and iOS (direct) response formats
     const actualResponse = response?.data ? response.data : response;
-    console.log('Payment Response received:', actualResponse);
-    LogsManager.addLog(
-      `Payment Response: ${JSON.stringify(actualResponse)}`,
-      LogType.RESPONSE
-    );
+    logSdkResponse(actualResponse);
   }, []);
   const [showEnvironmentPicker, setShowEnvironmentPicker] = useState(false);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
@@ -471,6 +477,8 @@ export const PaymentScreen: React.FC = () => {
     useState(false);
   const [showBottomSheetPicker, setShowBottomSheetPicker] = useState(false);
   const [showIgnoreReceiptPicker, setShowIgnoreReceiptPicker] = useState(false);
+  const [showNetworkInspectorPicker, setShowNetworkInspectorPicker] =
+    useState(false);
   const [showPrimaryColorPicker, setShowPrimaryColorPicker] = useState(false);
   const [showSecondaryColorPicker, setShowSecondaryColorPicker] =
     useState(false);
@@ -483,6 +491,9 @@ export const PaymentScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
+      markPaymentStart(
+        `${config.transactionType} | ${config.environment} | ${config.amount} ${config.currency} | merchant ${config.merchantId} / terminal ${config.terminalId} | merchantIdentifier ${config.additionValues?.merchantIdentifier ?? '(SDK default)'}`
+      );
       LogsManager.addLog('Starting payment initialization', LogType.INFO);
 
       const paymentConfig = {
@@ -495,9 +506,12 @@ export const PaymentScreen: React.FC = () => {
       await amwalPay.startPayment(paymentConfig as AmwalPayConfig);
 
       LogsManager.addLog('Payment SDK started successfully', LogType.INFO);
-    } catch (e) {
+    } catch (e: any) {
       Alert.alert('Error', 'Error starting payment');
-      LogsManager.addLog(`Payment initialization error: ${e}`, LogType.ERROR);
+      LogsManager.addLog(
+        `Payment initialization error: ${e?.message ?? e}${e?.stack ? `\n${e.stack}` : ''}`,
+        LogType.ERROR
+      );
     } finally {
       setIsLoading(false);
     }
@@ -525,7 +539,7 @@ export const PaymentScreen: React.FC = () => {
     try {
       await Share.share({
         title: 'Amwal Pay SDK logs',
-        message: LogsManager.exportAsText(header),
+        message: await buildQCReport(header),
       });
     } catch (e) {
       Alert.alert('SDK Logs', `Could not export logs: ${e}`);
@@ -816,6 +830,35 @@ export const PaymentScreen: React.FC = () => {
           onClose={() => setShowBottomSheetPicker(false)}
           items={BOTTOM_SHEET_ITEMS}
           title="Use Bottom Sheet Design"
+        />
+        <Text style={styles.label}>Network Inspector (Trackly)</Text>
+        <TouchableOpacity
+          style={styles.pickerButton}
+          onPress={() => setShowNetworkInspectorPicker(true)}
+        >
+          <Text style={styles.pickerButtonText}>
+            {config.additionValues?.networkInspectorEnabled === 'true'
+              ? 'Yes'
+              : 'No'}
+          </Text>
+          <Text style={styles.pickerButtonArrow}>▼</Text>
+        </TouchableOpacity>
+        <ModalPicker
+          visible={showNetworkInspectorPicker}
+          selectedValue={config.additionValues?.networkInspectorEnabled}
+          onValueChange={(value) => {
+            setConfig({
+              ...config,
+              additionValues: {
+                ...config.additionValues,
+                networkInspectorEnabled: value,
+              },
+            });
+            setShowNetworkInspectorPicker(false);
+          }}
+          onClose={() => setShowNetworkInspectorPicker(false)}
+          items={NETWORK_INSPECTOR_ITEMS}
+          title="Network Inspector (Trackly)"
         />
         <TouchableOpacity
           style={[styles.button, isLoading && styles.buttonDisabled]}

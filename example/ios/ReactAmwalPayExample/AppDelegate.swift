@@ -9,7 +9,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, RCTBridgeDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    
+    // QC builds: mirror stdout/stderr from launch so the in-app log export
+    // contains the SDK's native output (see QCLogCapture.swift).
+    QCLogCapture.startCapturing()
+
     bridge = RCTBridge(delegate: self, launchOptions: launchOptions)
     
     let rootView = RCTRootView(

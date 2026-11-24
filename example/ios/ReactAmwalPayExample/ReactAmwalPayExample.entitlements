@@ -6,6 +6,7 @@
 	<array>
 		<string>merchant.shahd.test</string>
 		<string>merchant.amwal.sdk</string>
+		<string>merchant.applepay.amwalpay</string>
 	</array>
 </dict>
 </plist>

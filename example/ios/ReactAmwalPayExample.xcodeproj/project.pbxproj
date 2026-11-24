@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		6187CCD1EA53FC75F19D5151 /* QCLogCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5413EA9FC3AB6C7AF394EFF /* QCLogCapture.swift */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		7ADAC8DB3B7C8C516E8D1615 /* QCLogCapture.m in Sources */ = {isa = PBXBuildFile; fileRef = BA28A8E39F041378588C430A /* QCLogCapture.m */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		E035A0D4A14BAA0975A72392 /* libPods-ReactAmwalPayExample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A7A59983153890F94AB50643 /* libPods-ReactAmwalPayExample.a */; };
 		F6668DCF000B65AC6995D7ED /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
@@ -39,6 +41,8 @@
 		761780EE2CA45674006654EF /* ReactAmwalPayExample-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ReactAmwalPayExample-Bridging-Header.h"; path = "ReactAmwalPayExample/ReactAmwalPayExample-Bridging-Header.h"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ReactAmwalPayExample/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A7A59983153890F94AB50643 /* libPods-ReactAmwalPayExample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ReactAmwalPayExample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B5413EA9FC3AB6C7AF394EFF /* QCLogCapture.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = QCLogCapture.swift; path = ReactAmwalPayExample/QCLogCapture.swift; sourceTree = "<group>"; };
+		BA28A8E39F041378588C430A /* QCLogCapture.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = QCLogCapture.m; path = ReactAmwalPayExample/QCLogCapture.m; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -64,6 +68,8 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				13B07FB91A68108700A75B9A /* ReactAmwalPayExample.entitlements */,
+				B5413EA9FC3AB6C7AF394EFF /* QCLogCapture.swift */,
+				BA28A8E39F041378588C430A /* QCLogCapture.m */,
 			);
 			name = ReactAmwalPayExample;
 			sourceTree = "<group>";
@@ -270,6 +276,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				6187CCD1EA53FC75F19D5151 /* QCLogCapture.swift in Sources */,
+				7ADAC8DB3B7C8C516E8D1615 /* QCLogCapture.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

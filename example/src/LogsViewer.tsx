@@ -9,10 +9,13 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { LogsManager, LogType, type LogEntry } from './LogsManager';
+import { clearAllLogs } from './QCLogging';
 
 const TYPE_COLORS: Record<LogType, string> = {
   [LogType.INFO]: '#007AFF',
+  [LogType.WARN]: '#FFB300',
   [LogType.ERROR]: '#FF3B30',
+  [LogType.CONSOLE]: '#8E8E93',
   [LogType.RESPONSE]: '#34C759',
   [LogType.CUSTOMER_ID]: '#FF9500',
 };
@@ -35,10 +38,7 @@ const LogsViewer: React.FC<Props> = ({ visible, onClose }) => {
         <View style={styles.header}>
           <Text style={styles.title}>SDK Logs</Text>
           <View style={styles.headerButtons}>
-            <TouchableOpacity
-              onPress={() => LogsManager.clearLogs()}
-              style={styles.clearButton}
-            >
+            <TouchableOpacity onPress={clearAllLogs} style={styles.clearButton}>
               <Text style={styles.clearButtonText}>Clear</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
